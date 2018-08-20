@@ -1,0 +1,33 @@
+﻿Build started 2018/8/6 9:32:06.
+     1>Project "C:\Users\csquan\Documents\Visual Studio 2010\Projects\mfc_osp_server\mfc_osp_server\mfc_osp_server.vcxproj" on node 2 (build target(s)).
+     1>InitializeBuildStatus:
+         Creating "Debug\mfc_osp_server.unsuccessfulbuild" because "AlwaysCreate" was specified.
+       ClCompile:
+         All outputs are up-to-date.
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /I"C:\Users\csquan\Documents\Visual Studio 2010\Projects\mfc_osp_server\include" /I"C:\Users\csquan\Documents\Visual Studio 2010\Projects\mfc_osp_server\osplib\include" /I"C:\Users\csquan\Documents\Visual Studio 2010\Projects\mfc_osp_server\osplib\lib\debug" /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D _UNICODE /D UNICODE /D _AFXDLL /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yu"StdAfx.h" /Fp"Debug\mfc_osp_server.pch" /Fo"Debug\\" /Fd"Debug\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt mfc_osp_serverDlg.cpp
+         mfc_osp_serverDlg.cpp
+     1>c:\users\csquan\documents\visual studio 2010\projects\mfc_osp_server\include\ospdemo.h(294): warning C4018: '<=' : signed/unsigned mismatch
+       ResourceCompile:
+         All outputs are up-to-date.
+       ManifestResourceCompile:
+         All outputs are up-to-date.
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\csquan\Documents\Visual Studio 2010\Projects\mfc_osp_server\Debug\mfc_osp_server.exe" /INCREMENTAL /NOLOGO /LIBPATH:"C:\Users\csquan\Documents\Visual Studio 2010\Projects\mfc_osp_server\osplib\lib\debug" DuiLib_u.lib OspLib.lib /MANIFEST /ManifestFile:"Debug\mfc_osp_server.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"C:\Users\csquan\Documents\Visual Studio 2010\Projects\mfc_osp_server\Debug\mfc_osp_server.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /ENTRY:"wWinMainCRTStartup" /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\csquan\Documents\Visual Studio 2010\Projects\mfc_osp_server\Debug\mfc_osp_server.lib" /MACHINE:X86 Debug\mfc_osp_server.res
+         Debug\mfc_osp_server.exe.embed.manifest.res
+         Debug\mfc_osp_server.obj
+         Debug\mfc_osp_serverDlg.obj
+         Debug\stdafx.obj
+       Manifest:
+         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /out:"Debug\mfc_osp_server.exe.embed.manifest" /manifest Debug\mfc_osp_server.exe.intermediate.manifest "C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\Include\Manifest\dpiaware.manifest"
+         All outputs are up-to-date.
+       LinkEmbedManifest:
+         All outputs are up-to-date.
+         mfc_osp_server.vcxproj -> C:\Users\csquan\Documents\Visual Studio 2010\Projects\mfc_osp_server\Debug\mfc_osp_server.exe
+       FinalizeBuildStatus:
+         Deleting file "Debug\mfc_osp_server.unsuccessfulbuild".
+         Touching "Debug\mfc_osp_server.lastbuildstate".
+     1>Done Building Project "C:\Users\csquan\Documents\Visual Studio 2010\Projects\mfc_osp_server\mfc_osp_server\mfc_osp_server.vcxproj" (build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:04.71

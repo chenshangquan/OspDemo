@@ -1,0 +1,47 @@
+﻿Build started 2018/8/9 13:37:16.
+     1>Project "C:\Users\csquan\Documents\Visual Studio 2010\Projects\mfc_osp_server\DuiStudy\DuiStudy.vcxproj" on node 2 (build target(s)).
+     1>InitializeBuildStatus:
+         Touching "Debug\DuiStudy.unsuccessfulbuild".
+       ClCompile:
+         All outputs are up-to-date.
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /I"C:\Users\csquan\Documents\Visual Studio 2010\Projects\mfc_osp_server\DuiLib_Redrain\DuiLib" /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yu"StdAfx.h" /Fp"Debug\DuiStudy.pch" /Fo"Debug\\" /Fd"Debug\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt DuiStudy.cpp
+         DuiStudy.cpp
+       ResourceCompile:
+         All outputs are up-to-date.
+       ManifestResourceCompile:
+         All outputs are up-to-date.
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\csquan\Documents\Visual Studio 2010\Projects\mfc_osp_server\Debug\DuiStudy.exe" /INCREMENTAL /NOLOGO /LIBPATH:"C:\Users\csquan\Documents\Visual Studio 2010\Projects\mfc_osp_server\DuiLib_Redrain\bin" DuiLib_d.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"Debug\DuiStudy.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"C:\Users\csquan\Documents\Visual Studio 2010\Projects\mfc_osp_server\Debug\DuiStudy.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\csquan\Documents\Visual Studio 2010\Projects\mfc_osp_server\Debug\DuiStudy.lib" /MACHINE:X86 Debug\DuiStudy.res
+         Debug\DuiStudy.exe.embed.manifest.res
+         Debug\DuiStudy.obj
+         Debug\stdafx.obj
+            Creating library C:\Users\csquan\Documents\Visual Studio 2010\Projects\mfc_osp_server\Debug\DuiStudy.lib and object C:\Users\csquan\Documents\Visual Studio 2010\Projects\mfc_osp_server\Debug\DuiStudy.exp
+     1>DuiStudy.obj : warning LNK4217: locally defined symbol ?ShowModal@CWindowWnd@DuiLib@@QAEIXZ (public: unsigned int __thiscall DuiLib::CWindowWnd::ShowModal(void)) imported in function _wWinMain@16
+     1>DuiStudy.obj : warning LNK4217: locally defined symbol ?CenterWindow@CWindowWnd@DuiLib@@QAEXXZ (public: void __thiscall DuiLib::CWindowWnd::CenterWindow(void)) imported in function _wWinMain@16
+     1>DuiStudy.obj : warning LNK4217: locally defined symbol ?Create@CWindowWnd@DuiLib@@QAEPAUHWND__@@PAU3@PB_WKKHHHHPAUHMENU__@@@Z (public: struct HWND__ * __thiscall DuiLib::CWindowWnd::Create(struct HWND__ *,wchar_t const *,unsigned long,unsigned long,int,int,int,int,struct HMENU__ *)) imported in function _wWinMain@16
+     1>DuiStudy.obj : warning LNK4217: locally defined symbol ??1CDuiString@DuiLib@@QAE@XZ (public: __thiscall DuiLib::CDuiString::~CDuiString(void)) imported in function _wWinMain@16
+     1>DuiStudy.obj : warning LNK4217: locally defined symbol ?SetResourcePath@CPaintManagerUI@DuiLib@@SAXPB_W@Z (public: static void __cdecl DuiLib::CPaintManagerUI::SetResourcePath(wchar_t const *)) imported in function _wWinMain@16
+     1>DuiStudy.obj : warning LNK4217: locally defined symbol ??BCDuiString@DuiLib@@QBEPB_WXZ (public: __thiscall DuiLib::CDuiString::operator wchar_t const *(void)const ) imported in function _wWinMain@16
+     1>DuiStudy.obj : warning LNK4217: locally defined symbol ?GetInstancePath@CPaintManagerUI@DuiLib@@SA?AVCDuiString@2@XZ (public: static class DuiLib::CDuiString __cdecl DuiLib::CPaintManagerUI::GetInstancePath(void)) imported in function _wWinMain@16
+     1>DuiStudy.obj : warning LNK4217: locally defined symbol ?SetInstance@CPaintManagerUI@DuiLib@@SAXPAUHINSTANCE__@@@Z (public: static void __cdecl DuiLib::CPaintManagerUI::SetInstance(struct HINSTANCE__ *)) imported in function _wWinMain@16
+     1>DuiStudy.obj : warning LNK4217: locally defined symbol ??0WindowImplBase@DuiLib@@QAE@XZ (public: __thiscall DuiLib::WindowImplBase::WindowImplBase(void)) imported in function "public: __thiscall CDuiFrameWnd::CDuiFrameWnd(void)" (??0CDuiFrameWnd@@QAE@XZ)
+     1>DuiStudy.obj : warning LNK4217: locally defined symbol ??0CDuiString@DuiLib@@QAE@PB_WH@Z (public: __thiscall DuiLib::CDuiString::CDuiString(wchar_t const *,int)) imported in function "public: virtual class DuiLib::CDuiString __thiscall CDuiFrameWnd::GetSkinFile(void)" (?GetSkinFile@CDuiFrameWnd@@UAE?AVCDuiString@DuiLib@@XZ)
+     1>DuiStudy.obj : warning LNK4217: locally defined symbol ?GetControl@CActiveXUI@DuiLib@@QAEJU_GUID@@PAPAX@Z (public: long __thiscall DuiLib::CActiveXUI::GetControl(struct _GUID,void * *)) imported in function "public: virtual void __thiscall CDuiFrameWnd::InitWindow(void)" (?InitWindow@CDuiFrameWnd@@UAEXXZ)
+     1>DuiStudy.obj : warning LNK4217: locally defined symbol ?CreateControl@CActiveXUI@DuiLib@@QAE_NU_GUID@@@Z (public: bool __thiscall DuiLib::CActiveXUI::CreateControl(struct _GUID)) imported in function "public: virtual void __thiscall CDuiFrameWnd::InitWindow(void)" (?InitWindow@CDuiFrameWnd@@UAEXXZ)
+     1>DuiStudy.obj : warning LNK4217: locally defined symbol ?SetDelayCreate@CActiveXUI@DuiLib@@QAEX_N@Z (public: void __thiscall DuiLib::CActiveXUI::SetDelayCreate(bool)) imported in function "public: virtual void __thiscall CDuiFrameWnd::InitWindow(void)" (?InitWindow@CDuiFrameWnd@@UAEXXZ)
+     1>DuiStudy.obj : warning LNK4217: locally defined symbol ?FindControl@CPaintManagerUI@DuiLib@@QBEPAVCControlUI@2@PB_W@Z (public: class DuiLib::CControlUI * __thiscall DuiLib::CPaintManagerUI::FindControl(wchar_t const *)const ) imported in function "public: virtual void __thiscall CDuiFrameWnd::InitWindow(void)" (?InitWindow@CDuiFrameWnd@@UAEXXZ)
+     1>DuiStudy.obj : warning LNK4217: locally defined symbol ??1WindowImplBase@DuiLib@@UAE@XZ (public: virtual __thiscall DuiLib::WindowImplBase::~WindowImplBase(void)) imported in function "public: virtual __thiscall CDuiFrameWnd::~CDuiFrameWnd(void)" (??1CDuiFrameWnd@@UAE@XZ)
+       Manifest:
+         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /out:"Debug\DuiStudy.exe.embed.manifest" /manifest Debug\DuiStudy.exe.intermediate.manifest
+         All outputs are up-to-date.
+       LinkEmbedManifest:
+         All outputs are up-to-date.
+         DuiStudy.vcxproj -> C:\Users\csquan\Documents\Visual Studio 2010\Projects\mfc_osp_server\Debug\DuiStudy.exe
+       FinalizeBuildStatus:
+         Deleting file "Debug\DuiStudy.unsuccessfulbuild".
+         Touching "Debug\DuiStudy.lastbuildstate".
+     1>Done Building Project "C:\Users\csquan\Documents\Visual Studio 2010\Projects\mfc_osp_server\DuiStudy\DuiStudy.vcxproj" (build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:01.39

@@ -1,0 +1,173 @@
+﻿Build started 2018/8/2 14:19:06.
+     1>Project "C:\Users\csquan\Documents\Visual Studio 2010\Projects\mfc_osp_server\duilib\DuiLib.vcxproj" on node 2 (build target(s)).
+     1>InitializeBuildStatus:
+         Creating "Unicode_Debug\DuiLib.unsuccessfulbuild" because "AlwaysCreate" was specified.
+       ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /Zi /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D UILIB_STATIC /D _VC80_UPGRADE=0x0600 /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yc"stdafx.h" /Fp"Unicode_Debug\DuiLib.pch" /Fo"Unicode_Debug\\" /Fd"Unicode_Debug\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt StdAfx.cpp
+         StdAfx.cpp
+     1>c:\users\csquan\documents\visual studio 2010\projects\mfc_osp_server\duilib\UIlib.h(30): warning C4005: 'UILIB_STATIC' : macro redefinition
+                 command-line arguments :  see previous definition of 'UILIB_STATIC'
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /Zi /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D UILIB_STATIC /D _VC80_UPGRADE=0x0600 /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yu"stdafx.h" /Fp"Unicode_Debug\DuiLib.pch" /Fo"Unicode_Debug\\" /Fd"Unicode_Debug\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt Control\UIGif.cpp Control\UILetterIndex.cpp Control\UITouchList.cpp Core\caseManager.cpp DuiDrag\DragController.cpp DuiDrag\DragDataMgr.cpp DuiDrag\DragInterface.cpp DuiDrag\DuiDrag.cpp DuiDrag\UIDragWnd.cpp Layout\UISlideTabLayout.cpp UIlib.cpp Utils\GifImage.cpp Utils\WinImplBase.cpp Utils\UIDelegate.cpp Utils\Utils.cpp Core\UIBase.cpp Core\UIContainer.cpp Core\UIControl.cpp Core\UIDlgBuilder.cpp Core\UIManager.cpp Core\UIMarkup.cpp Core\UIRender.cpp Layout\UIChildLayout.cpp Layout\UIHorizontalLayout.cpp Layout\UITabLayout.cpp Layout\UITileLayout.cpp Layout\UIVerticalLayout.cpp Control\UIActiveX.cpp Control\UIButton.cpp Control\UICheckBox.cpp Control\UICombo.cpp Control\UIComboBox.cpp Control\UIDateTime.cpp Control\UIEdit.cpp Control\UILabel.cpp Control\UIList.cpp Control\UIOption.cpp Control\UIProgress.cpp Control\UIRichEdit.cpp Control\UIScrollBar.cpp Control\UISlider.cpp Control\UIText.cpp Control\UITreeView.cpp Control\UIWebBrowser.cpp
+         UIWebBrowser.cpp
+         UITreeView.cpp
+         UIText.cpp
+         UISlider.cpp
+     1>Control\UISlider.cpp(53): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Control\UISlider.cpp(54): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+         UIScrollBar.cpp
+         UIRichEdit.cpp
+         UIProgress.cpp
+         UIOption.cpp
+         UIList.cpp
+         UILabel.cpp
+     1>Control\UILabel.cpp(142): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Control\UILabel.cpp(143): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Control\UILabel.cpp(144): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Control\UILabel.cpp(145): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+         UIEdit.cpp
+     1>Control\UIEdit.cpp(179): warning C4018: '>' : signed/unsigned mismatch
+     1>Control\UIEdit.cpp(181): warning C4018: '<' : signed/unsigned mismatch
+     1>Control\UIEdit.cpp(193): warning C4018: '<' : signed/unsigned mismatch
+     1>Control\UIEdit.cpp(199): warning C4018: '>' : signed/unsigned mismatch
+         UIDateTime.cpp
+         UIComboBox.cpp
+         UICombo.cpp
+     1>Control\UICombo.cpp(139): warning C4244: '=' : conversion from 'float' to 'int', possible loss of data
+     1>Control\UICombo.cpp(140): warning C4244: '=' : conversion from 'float' to 'int', possible loss of data
+     1>Control\UICombo.cpp(586): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Control\UICombo.cpp(587): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Control\UICombo.cpp(1094): warning C4244: '=' : conversion from 'float' to 'int', possible loss of data
+         UICheckBox.cpp
+         UIButton.cpp
+         UIActiveX.cpp
+         UIVerticalLayout.cpp
+         UITileLayout.cpp
+         UITabLayout.cpp
+         Generating Code...
+         Compiling...
+         UIHorizontalLayout.cpp
+         UIChildLayout.cpp
+         UIRender.cpp
+     1>Core\UIRender.cpp(1104): warning C4244: '*=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Core\UIRender.cpp(1105): warning C4244: '*=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Core\UIRender.cpp(1106): warning C4244: '*=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Core\UIRender.cpp(1107): warning C4244: '*=' : conversion from 'float' to 'LONG', possible loss of data
+         UIMarkup.cpp
+         UIManager.cpp
+     1>Core\UIManager.cpp(364): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Core\UIManager.cpp(365): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Core\UIManager.cpp(422): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Core\UIManager.cpp(423): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Core\UIManager.cpp(445): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Core\UIManager.cpp(446): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+         UIDlgBuilder.cpp
+     1>Core\UIDlgBuilder.cpp(97): warning C4244: '=' : conversion from 'float' to 'int', possible loss of data
+         UIControl.cpp
+     1>Core\UIControl.cpp(287): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Core\UIControl.cpp(288): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Core\UIControl.cpp(389): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Core\UIControl.cpp(390): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Core\UIControl.cpp(406): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Core\UIControl.cpp(407): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Core\UIControl.cpp(434): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Core\UIControl.cpp(435): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Core\UIControl.cpp(493): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Core\UIControl.cpp(494): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Core\UIControl.cpp(495): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Core\UIControl.cpp(496): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Core\UIControl.cpp(534): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Core\UIControl.cpp(535): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Core\UIControl.cpp(663): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Core\UIControl.cpp(664): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Core\UIControl.cpp(665): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Core\UIControl.cpp(666): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Core\UIControl.cpp(687): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Core\UIControl.cpp(688): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Core\UIControl.cpp(712): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Core\UIControl.cpp(749): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+         UIContainer.cpp
+     1>Core\UIContainer.cpp(167): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Core\UIContainer.cpp(168): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Core\UIContainer.cpp(169): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Core\UIContainer.cpp(170): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+         UIBase.cpp
+     1>Core\UIBase.cpp(530): warning C4800: 'BOOL' : forcing value to bool 'true' or 'false' (performance warning)
+         Utils.cpp
+         UIDelegate.cpp
+         WinImplBase.cpp
+         GifImage.cpp
+         UIlib.cpp
+         UISlideTabLayout.cpp
+         UIDragWnd.cpp
+         DuiDrag.cpp
+         DragInterface.cpp
+         DragDataMgr.cpp
+         DragController.cpp
+         Generating Code...
+         Compiling...
+         caseManager.cpp
+         UITouchList.cpp
+         UILetterIndex.cpp
+         UIGif.cpp
+         Generating Code...
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /Zi /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D UILIB_STATIC /D _VC80_UPGRADE=0x0600 /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Unicode_Debug\\" /Fd"Unicode_Debug\vc100.pdb" /Gd /TC /analyze- /errorReport:prompt Utils\stb_image.c
+         stb_image.c
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /Zi /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D UILIB_STATIC /D _VC80_UPGRADE=0x0600 /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Unicode_Debug\\" /Fd"Unicode_Debug\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt Utils\XUnzip.cpp
+         XUnzip.cpp
+       Lib:
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\Lib.exe /OUT:"..\..\10-common\lib\debug\win32_2010\DuiLib_u.lib" /NOLOGO Unicode_Debug\UIGif.obj
+         Unicode_Debug\UILetterIndex.obj
+         Unicode_Debug\UITouchList.obj
+         Unicode_Debug\caseManager.obj
+         Unicode_Debug\DragController.obj
+         Unicode_Debug\DragDataMgr.obj
+         Unicode_Debug\DragInterface.obj
+         Unicode_Debug\DuiDrag.obj
+         Unicode_Debug\UIDragWnd.obj
+         Unicode_Debug\UISlideTabLayout.obj
+         Unicode_Debug\StdAfx.obj
+         Unicode_Debug\UIlib.obj
+         Unicode_Debug\GifImage.obj
+         Unicode_Debug\WinImplBase.obj
+         Unicode_Debug\stb_image.obj
+         Unicode_Debug\UIDelegate.obj
+         Unicode_Debug\Utils.obj
+         Unicode_Debug\XUnzip.obj
+         Unicode_Debug\UIBase.obj
+         Unicode_Debug\UIContainer.obj
+         Unicode_Debug\UIControl.obj
+         Unicode_Debug\UIDlgBuilder.obj
+         Unicode_Debug\UIManager.obj
+         Unicode_Debug\UIMarkup.obj
+         Unicode_Debug\UIRender.obj
+         Unicode_Debug\UIChildLayout.obj
+         Unicode_Debug\UIHorizontalLayout.obj
+         Unicode_Debug\UITabLayout.obj
+         Unicode_Debug\UITileLayout.obj
+         Unicode_Debug\UIVerticalLayout.obj
+         Unicode_Debug\UIActiveX.obj
+         Unicode_Debug\UIButton.obj
+         Unicode_Debug\UICheckBox.obj
+         Unicode_Debug\UICombo.obj
+         Unicode_Debug\UIComboBox.obj
+         Unicode_Debug\UIDateTime.obj
+         Unicode_Debug\UIEdit.obj
+         Unicode_Debug\UILabel.obj
+         Unicode_Debug\UIList.obj
+         Unicode_Debug\UIOption.obj
+         Unicode_Debug\UIProgress.obj
+         Unicode_Debug\UIRichEdit.obj
+         Unicode_Debug\UIScrollBar.obj
+         Unicode_Debug\UISlider.obj
+         Unicode_Debug\UIText.obj
+         Unicode_Debug\UITreeView.obj
+         Unicode_Debug\UIWebBrowser.obj
+         DuiLib.vcxproj -> C:\Users\csquan\Documents\Visual Studio 2010\Projects\mfc_osp_server\duilib\..\..\10-common\lib\debug\win32_2010\DuiLib_u.lib
+       FinalizeBuildStatus:
+         Deleting file "Unicode_Debug\DuiLib.unsuccessfulbuild".
+         Touching "Unicode_Debug\DuiLib.lastbuildstate".
+     1>Done Building Project "C:\Users\csquan\Documents\Visual Studio 2010\Projects\mfc_osp_server\duilib\DuiLib.vcxproj" (build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:05.73

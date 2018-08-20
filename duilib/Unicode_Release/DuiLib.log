@@ -1,0 +1,73 @@
+﻿Build started 2017/11/3 9:21:23.
+     1>Project "E:\svn_root\20131028_TPS\Professional_VOB\t5-neith\duilib\DuiLib.vcxproj" on node 2 (build target(s)).
+     1>InitializeBuildStatus:
+         Creating "Unicode_Release\DuiLib.unsuccessfulbuild" because "AlwaysCreate" was specified.
+       ClCompile:
+         All outputs are up-to-date.
+         d:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /Zi /nologo /W3 /WX- /O1 /Ob1 /Oy- /D WIN32 /D NDEBUG /D _WINDOWS /D UILIB_STATIC /D _VC80_UPGRADE=0x0600 /D _UNICODE /D UNICODE /GF /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Yu"StdAfx.h" /Fp"Unicode_Release\DuiLib.pch" /Fo"Unicode_Release\\" /Fd"Unicode_Release\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt Core\UIManager.cpp
+         UIManager.cpp
+     1>Core\UIManager.cpp(364): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Core\UIManager.cpp(365): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Core\UIManager.cpp(422): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Core\UIManager.cpp(423): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Core\UIManager.cpp(445): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+     1>Core\UIManager.cpp(446): warning C4244: '=' : conversion from 'float' to 'LONG', possible loss of data
+         All outputs are up-to-date.
+         All outputs are up-to-date.
+       Lib:
+         d:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\Lib.exe /OUT:"..\..\10-common\lib\release\win32_2010\DuiLib_u.lib" /NOLOGO Unicode_Release\UIGif.obj
+         Unicode_Release\UILetterIndex.obj
+         Unicode_Release\UITouchList.obj
+         Unicode_Release\caseManager.obj
+         Unicode_Release\DragController.obj
+         Unicode_Release\DragDataMgr.obj
+         Unicode_Release\DragInterface.obj
+         Unicode_Release\DuiDrag.obj
+         Unicode_Release\UIDragWnd.obj
+         Unicode_Release\UISlideTabLayout.obj
+         Unicode_Release\StdAfx.obj
+         Unicode_Release\UIlib.obj
+         Unicode_Release\GifImage.obj
+         Unicode_Release\WinImplBase.obj
+         Unicode_Release\stb_image.obj
+         Unicode_Release\UIDelegate.obj
+         Unicode_Release\Utils.obj
+         Unicode_Release\XUnzip.obj
+         Unicode_Release\UIBase.obj
+         Unicode_Release\UIContainer.obj
+         Unicode_Release\UIControl.obj
+         Unicode_Release\UIDlgBuilder.obj
+         Unicode_Release\UIManager.obj
+         Unicode_Release\UIMarkup.obj
+         Unicode_Release\UIRender.obj
+         Unicode_Release\UIChildLayout.obj
+         Unicode_Release\UIHorizontalLayout.obj
+         Unicode_Release\UITabLayout.obj
+         Unicode_Release\UITileLayout.obj
+         Unicode_Release\UIVerticalLayout.obj
+         Unicode_Release\UIActiveX.obj
+         Unicode_Release\UIButton.obj
+         Unicode_Release\UICheckBox.obj
+         Unicode_Release\UICombo.obj
+         Unicode_Release\UIComboBox.obj
+         Unicode_Release\UIDateTime.obj
+         Unicode_Release\UIEdit.obj
+         Unicode_Release\UILabel.obj
+         Unicode_Release\UIList.obj
+         Unicode_Release\UIOption.obj
+         Unicode_Release\UIProgress.obj
+         Unicode_Release\UIRichEdit.obj
+         Unicode_Release\UIScrollBar.obj
+         Unicode_Release\UISlider.obj
+         Unicode_Release\UIText.obj
+         Unicode_Release\UITreeView.obj
+         Unicode_Release\UIWebBrowser.obj
+         DuiLib.vcxproj -> E:\svn_root\20131028_TPS\Professional_VOB\t5-neith\duilib\..\..\10-common\lib\release\win32_2010\DuiLib_u.lib
+       FinalizeBuildStatus:
+         Deleting file "Unicode_Release\DuiLib.unsuccessfulbuild".
+         Touching "Unicode_Release\DuiLib.lastbuildstate".
+     1>Done Building Project "E:\svn_root\20131028_TPS\Professional_VOB\t5-neith\duilib\DuiLib.vcxproj" (build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:03.14
