@@ -120,12 +120,7 @@ void OnBnClickedConnect()
         s32 nPostRet = OspPost(MAKEIID(DEMO_APP_SERVER_NO, CInstance::DAEMON), EVENT_SERVER_INS_ALLOT,
             NULL, 0, CPublic::g_uNodeNum, MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO), 0, DEMO_POST_TIMEOUT);
     }
-
-    // 初始化文件传输相关全局变量;
-    //ZeroMemory(CPublic::m_lastStart, MAX_THREADNO);
-    //ZeroMemory(CPublic::m_lastSize, MAX_THREADNO);
-    //ZeroMemory(CPublic::m_errorIndex, MAX_THREADNO);
-
+	return;
 }
 
 // 文件选择处理按钮;
@@ -208,7 +203,6 @@ void OnBnClickedFileSel()
         OspPost(MAKEIID(DEMO_APP_CLIENT_NO, CInstance::DAEMON), EVENT_CLIENT_INS_ALLOT, NULL, 0,
             0, MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO), 0, DEMO_POST_TIMEOUT);
 
-        CPublic::m_PktIndex = 0;
         m_fileInfo.fileStart = 0;
         m_fileInfo.fileSize = 0;
         m_fileInfo.lastStart = 0;
@@ -223,44 +217,45 @@ void OnBnClickedFileSel()
 void OnBnClickedFilePst()
 {
     u16 wInsNum = 0;
-    u16 nIndex = 0;
+    u16 wIndex = 0;
     u16 wCliPostInsNo = 0;
     u16 wSerPostInsNo = 0;
 
     OspPrintf(TRUE, FALSE, "start to call sendFileInfo\n");
-    // 初始化发送流程的状态信息;
-    CPublic::m_lastStart = 0;
-    CPublic::m_lastSize  = 0;
-    CPublic::m_errorIndex = 0;
 
-    // do something;
     // 获取客户端申请得到的instance;
-    for (nIndex; nIndex < MAX_FILE_POST_INS; nIndex++)
+    for (wIndex; wIndex < MAX_FILE_POST_INS; wIndex++)
     {
-        if (g_uInsNo[nIndex].uCliInsNum != 0 && g_uInsNo[nIndex].nFlag == 0)
+        if (g_uInsNo[wIndex].uCliInsNum != 0 && g_uInsNo[wIndex].nFlag == 0)
         {
-            wCliPostInsNo = g_uInsNo[nIndex].uCliInsNum;
-            g_uInsNo[nIndex].nFlag = 1;     //使用置1;
+            wCliPostInsNo = g_uInsNo[wIndex].uCliInsNum;
+            g_uInsNo[wIndex].nFlag = 1;     //使用置1;
 
             // 初始化;
-            g_uInsNo[nIndex].nLastStart  = 0;
-            g_uInsNo[nIndex].nLastSize   = 0;
-            g_uInsNo[nIndex].nPktIndex   = 0;
-            g_uInsNo[nIndex].nErrorIndex = 0;
+            g_uInsNo[wIndex].nLastStart  = 0;
+            g_uInsNo[wIndex].nLastSize   = 0;
+            g_uInsNo[wIndex].nPktIndex   = 0;
+            g_uInsNo[wIndex].nErrorIndex = 0;
+
+			USES_CONVERSION;
+			ZeroMemory(g_uInsNo[wIndex].strFilePath, MAX_PATH);
+			memcpy_s(g_uInsNo[wIndex].strFilePath, MAX_PATH, g_strFilePath, strlen(W2A(g_strFilePath)));
             break;
         }
     }
 
-    if (nIndex == MAX_FILE_POST_INS)
+    if (wIndex == MAX_FILE_POST_INS)
     {
         OspPrintf(TRUE, FALSE, "Client:Get instance index error!!\r\n");
     }
 
     // 发送请求待服务端，让服务端申请一个空闲的instance，负责文件的接收;
-    //s32 nPostRet = OspPost(MAKEIID(DEMO_APP_SERVER_NO, CInstance::DAEMON), EVENT_SERVER_INS_ALLOT,
-    //        NULL, 0, CPublic::g_uNodeNum, MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO), 0, DEMO_POST_TIMEOUT);
+    s32 nPostRet = OspPost(MAKEIID(DEMO_APP_SERVER_NO, CInstance::DAEMON), EVENT_SERVER_INS_ALLOT,
+            NULL, 0, CPublic::g_uNodeNum, MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO), 0, DEMO_POST_TIMEOUT);
+	wSerPostInsNo = wCliPostInsNo;
 
-    sendFileInfo(0, 0, "0", wCliPostInsNo, wSerPostInsNo, nIndex);
+	// 发送第一个包;
+    sendFileInfo(0, 0, "0", wCliPostInsNo, wSerPostInsNo, wIndex);
 
     // 初始化暂停标记位;
     g_PauseFlag = 0;
