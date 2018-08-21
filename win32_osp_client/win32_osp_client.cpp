@@ -62,78 +62,43 @@ void OnBnClickedPost(CEditUI* m_pEditPost)
 
     // 发送消息到server端;
     OspPrintf(TRUE, FALSE, "client start to send a message to server: %s , length = %d\n", strMsg, strlen(strMsg));
-	s32 ret3 = OspPost(MAKEIID(1, CPublic::g_uInsNum), EVENT_MSG_POST, strMsg, strlen(strMsg), CPublic::g_uNodeNum, MAKEIID(2, 1));
-}
-
-// 判断IP字符串的合法性;
-BOOL isIpFormatRight(LPCTSTR pIpAddr)
-{
-    s32 dwCount = 0;
-    s32 i = 0;
-    s32 dwA, dwB, dwC, dwD;
-
-    // 检查是否只包含点和数字;
-    for(i = 0; pIpAddr[i] != '\0'; i++)
-    {
-        if(!isdigit(pIpAddr[i]) && pIpAddr[i] != '.')
-            return FALSE;
-    }
-
-    // 检查形式是否为X.X.X.X;
-    for (i = 0; pIpAddr[i+1] != '\0'; i++)
-    {
-        if (isdigit(pIpAddr[i]) && pIpAddr[i+1] == '.')
-        {
-           dwCount++;
-        }
-    }    
-    if (dwCount != 3)
-    {
-        return FALSE;
-    }
-
-    // 检查区间的合法性;
-    if ((swscanf(pIpAddr, L"%d.%d.%d.%d", &dwA, &dwB, &dwC, &dwD) == 4)
-        &&(dwA >= 0 && dwA <= 255)
-        &&(dwB >= 0 && dwB <= 255)
-        &&(dwC >= 0 && dwC <= 255)
-        &&(dwD >= 0 && dwD <= 255))
-    {
-        return TRUE;
-    }
-    return FALSE;
+	s32 nPostRet = OspPost(MAKEIID(DEMO_APP_SERVER_NO, CPublic::g_uInsNum), EVENT_MSG_POST, strMsg, strlen(strMsg), CPublic::g_uNodeNum, MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO));
 }
 
 // 配置消息处理按钮;
 void OnBnClickedConnect()
 {
-    //u32 dwIpv4Addr = inet_addr("127.0.0.1");
-    //u32 wTcpPort = 6682;
+    u32 dwIpv4Addr = 0;
+    u32 dwTcpPort = 0;
+    u32 dwLocalIP = 0;
 
     // 获取Ipv4Addr及TcpPort;
     CEditUI *pEditIPAddr = pFrame->m_pEditIPAddr;
     CEditUI *pEditPort = pFrame->m_pEditPort;
     LPCTSTR pStrIPAddr = (pEditIPAddr->GetText()).GetData();
     LPCTSTR pStrPort = (pEditPort->GetText()).GetData();
-    if (isIpFormatRight(pStrIPAddr) != TRUE)
+
+    if (IsIpFormatRight(pStrIPAddr) != TRUE)
     {
         ::MessageBox(NULL, _T("INVALID IPADDRESS"), _T("Config Result"), NULL);
         return;
     }
-    USES_CONVERSION;
-    u32 dwIpv4Addr = inet_addr(W2A(pStrIPAddr));
-    u32 dwTcpPort = atoi(W2A(pStrPort));
 
-    // OSP初始化
-    BOOL32 BOspInit = OspInit(TRUE, 2520);
-    BOOL32 BIsOspInitd = IsOspInitd();
-    OspPrintf(TRUE, FALSE, "Socket Init OK!!\r\n");
+    USES_CONVERSION;
+    dwIpv4Addr = inet_addr(W2A(pStrIPAddr));
+    dwTcpPort = atoi(W2A(pStrPort));
+
+    // OSP初始化;
+    OspInit(TRUE, 2520);
+    // OSP初始化结果查询;
+    if (IsOspInitd() == TRUE)
+    {
+        OspPrintf(TRUE, FALSE, "OSP Init OK!!\r\n");
+    }
 
     // 创建监听结点;
 
     // 连接外部结点;
-    u32 dwLocalIP = 0;
-    //OspPrintf(TRUE, FALSE, "ServerIP: %d\n", dwIpv4Addr);
     CPublic::g_uNodeNum = OspConnectTcpNode(dwIpv4Addr, dwTcpPort, 10,
         3, 0, &dwLocalIP);
 
@@ -145,14 +110,15 @@ void OnBnClickedConnect()
     }
     else
     {
-        OspPrintf(TRUE, FALSE, "Connect Result:SUCCESSFUL. 节点号：%d\r\n", CPublic::g_uNodeNum);
+        OspPrintf(TRUE, FALSE, "Connect Result:SUCCESSFUL. Node Number:%d\r\n", CPublic::g_uNodeNum);
         ::MessageBox(NULL, _T("SUCCESSFUL!!"), _T("Connect Result"), NULL);
-        //MessageBox(nodeNumStr, _T("获得的节点号"), MB_OK);
 
         //创建APP
-        int CrtRet = g_cDemoApp.CreateApp("DemoClient", 2, 100, 1000); //APPID = 2
-        int ret3 = OspPost(MAKEIID(1, CInstance::DAEMON), EVENT_MSG_POST, "hello", 5, CPublic::g_uNodeNum, MAKEIID(2, 1), 0, 2000);
+        s32 nCrtRet = g_cDemoApp.CreateApp("DemoClient", DEMO_APP_CLIENT_NO, DEMO_APP_PRIO, DEMO_APP_QUE_SIZE); //APPID = 2
 
+        // 让服务端分配到一个空闲的instance， 负责消息互传任务;
+        s32 nPostRet = OspPost(MAKEIID(DEMO_APP_SERVER_NO, CInstance::DAEMON), EVENT_SERVER_INS_ALLOT,
+            NULL, 0, CPublic::g_uNodeNum, MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO), 0, DEMO_POST_TIMEOUT);
     }
 
     // 初始化文件传输相关全局变量;
@@ -227,10 +193,21 @@ void OnBnClickedFileSel()
         memcpy_s(m_fileInfo.strFileName, MAX_FILE_NAME, Buff, strlen(Buff));
         //wcstombs(m_fileInfo.strFileName, szFileName, strlen(szFileName));
         OspPrintf(TRUE, FALSE, "Start to send fileInfo, name is : %s, length : %d\n", m_fileInfo.strFileName, m_length);
-        OspPost(MAKEIID(1, CPublic::g_uInsNum), EVENT_FILE_ATR_POST, m_fileInfo.strFileName, strlen(m_fileInfo.strFileName), CPublic::g_uNodeNum, MAKEIID(2, 1));
+
+        // 文件名发送到服务端;
+        OspPost(MAKEIID(DEMO_APP_SERVER_NO, CPublic::g_uInsNum), EVENT_FILE_ATR_POST, m_fileInfo.strFileName,
+            strlen(m_fileInfo.strFileName), CPublic::g_uNodeNum, MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO));
         ZeroMemory(strFileLen, 10);
         sprintf(strFileLen, "%d", m_fileInfo.fileLength);
-        OspPost(MAKEIID(1, CPublic::g_uInsNum), EVENT_FILE_LEN_POST, strFileLen, strlen(strFileLen), CPublic::g_uNodeNum, MAKEIID(2, 1));
+
+        // 文件长度发送到服务端;
+        OspPost(MAKEIID(DEMO_APP_SERVER_NO, CPublic::g_uInsNum), EVENT_FILE_LEN_POST, strFileLen,
+            strlen(strFileLen), CPublic::g_uNodeNum, MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO));
+
+        // 让客户端分配一个空闲的instance，用于处理文件发送流程;
+        OspPost(MAKEIID(DEMO_APP_CLIENT_NO, CInstance::DAEMON), EVENT_CLIENT_INS_ALLOT, NULL, 0,
+            0, MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO), 0, DEMO_POST_TIMEOUT);
+
         CPublic::m_PktIndex = 0;
         m_fileInfo.fileStart = 0;
         m_fileInfo.fileSize = 0;
@@ -239,35 +216,55 @@ void OnBnClickedFileSel()
         m_fileInfo.filePacketIndex = 0;
 
     }
-}
-
-DWORD WINAPI TaskFunc(PVOID pvParam)
-{
-    sendFileInfo(0, 0, "0");
-    OspTaskExit();
-    return 0;
+    return;
 }
 
 // 文件发送处理按钮;
 void OnBnClickedFilePst()
 {
+    u16 wInsNum = 0;
+    u16 nIndex = 0;
+    u16 wCliPostInsNo = 0;
+    u16 wSerPostInsNo = 0;
+
     OspPrintf(TRUE, FALSE, "start to call sendFileInfo\n");
     // 初始化发送流程的状态信息;
     CPublic::m_lastStart = 0;
     CPublic::m_lastSize  = 0;
     CPublic::m_errorIndex = 0;
 
-    u32 uTaskID;
-    //func pvTaskEntry;
-    //pvTaskEntry = sendFileInfo;
-    //pvTaskEntry = TaskFunc;
+    // do something;
+    // 获取客户端申请得到的instance;
+    for (nIndex; nIndex < MAX_FILE_POST_INS; nIndex++)
+    {
+        if (g_uInsNo[nIndex].uCliInsNum != 0 && g_uInsNo[nIndex].nFlag == 0)
+        {
+            wCliPostInsNo = g_uInsNo[nIndex].uCliInsNum;
+            g_uInsNo[nIndex].nFlag = 1;     //使用置1;
 
-    g_hTask = OspTaskCreate(TaskFunc, "OspSendTask", 100,
-        200<<10, 0, CREATE_SUSPENDED, &uTaskID);
+            // 初始化;
+            g_uInsNo[nIndex].nLastStart  = 0;
+            g_uInsNo[nIndex].nLastSize   = 0;
+            g_uInsNo[nIndex].nPktIndex   = 0;
+            g_uInsNo[nIndex].nErrorIndex = 0;
+            break;
+        }
+    }
 
+    if (nIndex == MAX_FILE_POST_INS)
+    {
+        OspPrintf(TRUE, FALSE, "Client:Get instance index error!!\r\n");
+    }
+
+    // 发送请求待服务端，让服务端申请一个空闲的instance，负责文件的接收;
+    //s32 nPostRet = OspPost(MAKEIID(DEMO_APP_SERVER_NO, CInstance::DAEMON), EVENT_SERVER_INS_ALLOT,
+    //        NULL, 0, CPublic::g_uNodeNum, MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO), 0, DEMO_POST_TIMEOUT);
+
+    sendFileInfo(0, 0, "0", wCliPostInsNo, wSerPostInsNo, nIndex);
+
+    // 初始化暂停标记位;
     g_PauseFlag = 0;
-    //WaitForSingleObject(g_hTask, INFINITE);
-    //CloseHandle(g_hTask);
+    return;
 }
 
 // 文件暂停传输;

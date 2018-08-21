@@ -64,62 +64,23 @@ void OnBnClickedPost(CEditUI* m_pEditPost)
 
     // 获取窗口内容;
     OspPrintf(TRUE, FALSE, "server start to send a message to client: %s, length = %d\n", strMsg, strlen(strMsg));
-    OspPost(MAKEIID(2, 1), EVENT_MSG_POST, strMsg, strlen(strMsg), CPublic::g_uNodeNum, MAKEIID(1, 2), 0, 2000);
+    OspPost(MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO), EVENT_MSG_POST, strMsg, strlen(strMsg), CPublic::g_uNodeNum, MAKEIID(DEMO_APP_SERVER_NO, CPublic::g_uInsNum));
 
-}
-
-// 判断IP字符串的合法性;
-BOOL isIpFormatRight(LPCTSTR pIpAddr)
-{
-    s32 dwCount = 0;
-    s32 i = 0;
-    s32 dwA, dwB, dwC, dwD;
-
-    // 检查是否只包含点和数字;
-    for(i = 0; pIpAddr[i] != '\0'; i++)
-    {
-        if(!isdigit(pIpAddr[i]) && pIpAddr[i] != '.')
-            return FALSE;
-    }
-
-    // 检查形式是否为X.X.X.X;
-    for (i = 0; pIpAddr[i+1] != '\0'; i++)
-    {
-        if (isdigit(pIpAddr[i]) && pIpAddr[i+1] == '.')
-        {
-           dwCount++;
-        }
-    }    
-    if (dwCount != 3)
-    {
-        return FALSE;
-    }
-
-    // 检查区间的合法性;
-    if ((swscanf(pIpAddr, L"%d.%d.%d.%d", &dwA, &dwB, &dwC, &dwD) == 4)
-        &&(dwA >= 0 && dwA <= 255)
-        &&(dwB >= 0 && dwB <= 255)
-        &&(dwC >= 0 && dwC <= 255)
-        &&(dwD >= 0 && dwD <= 255))
-    {
-        return TRUE;
-    }
-    return FALSE;
 }
 
 // 配置按钮消息处理;
 void OnBnClickedConfig()
 {
-    //u32 dwIpAddr = inet_addr("127.0.0.1");
-    //u16 wPort = 6682;
-
+    u32 dwIpv4Addr = inet_addr("127.0.0.1");
+    u16 wTcpPort = 6682;
+#if 0 //直接本机IP地址;
     // 获取Ipv4Addr及TcpPort;
     CEditUI *pEditIPAddr = pFrame->m_pEditIPAddr;
     CEditUI *pEditPort = pFrame->m_pEditPort;
     LPCTSTR pStrIPAddr = (pEditIPAddr->GetText()).GetData();
     LPCTSTR pStrPort = (pEditPort->GetText()).GetData();
 
-    if (isIpFormatRight(pStrIPAddr) != TRUE)
+    if (IsIpFormatRight(pStrIPAddr) != TRUE)
     {
         ::MessageBox(NULL, _T("INVALID IPADDRESS"), _T("Config Result"), NULL);
         return;
@@ -127,15 +88,17 @@ void OnBnClickedConfig()
     USES_CONVERSION;
     u32 uIpv4Addr = inet_addr(W2A(pStrIPAddr));
     u32 uTcpPort = atoi(W2A(pStrPort));
-
+#endif
     // OSP初始化
-    BOOL32 BOspInit = OspInit(TRUE, 2510);
+    OspInit(TRUE, 2510);
     // OSP初始化结果查询
-    BOOL32 BIsOspInitd = IsOspInitd();
-    OspPrintf(TRUE, FALSE, "OSP初始化结果：%d", BIsOspInitd);
+    if (IsOspInitd() == TRUE)
+    {
+        OspPrintf(TRUE, FALSE, "OSP Init OK!!");
+    }
 
     // 创建一个TCP结点 //本地监听结点;
-    s32 sfd = OspCreateTcpNode(uIpv4Addr, uTcpPort);
+    s32 sfd = OspCreateTcpNode(dwIpv4Addr, wTcpPort);
     if (INVALID_SOCKET == sfd)
     {
         OspPrintf(TRUE, FALSE, "INVALID SOCKET\r\n");
@@ -147,7 +110,7 @@ void OnBnClickedConfig()
         OspPrintf(TRUE, FALSE, "服务器配置结果：SUCCESSFUL!! Socket Number:%d\r\n", sfd);
         ::MessageBox(NULL, _T("SUCCESSFUL!!"), _T("服务器配置结果"), NULL);
         //创建APP
-        s32 dwCreateRlt = g_cDemoApp.CreateApp("DemoServer", 1, 100, 1000); //APPID = 1
+        s32 nGreateRlt = g_cDemoApp.CreateApp("DemoServer", DEMO_APP_SERVER_NO, DEMO_APP_PRIO, DEMO_APP_QUE_SIZE); //APPID = 1
     }
 }
 

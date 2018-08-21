@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window mininfo="300,400" size="400,600">
+  <Font name="幼圆" size="16" default="true" />
+  <VerticalLayout bkcolor="#FFC0C0C0">
+	<HorizontalLayout height="100">
+		<VerticalLayout>
+			<Edit name="EditIPAddr" text="X.X.X.X" height="25" width="160" />
+			<HorizontalLayout>
+				<Edit name="EditPort" text="PORT" height="25" width="80" />
+				<Button name="ConnectButton" text="连接按钮" width="80" height="25" />
+				<Button name="DisCntButton" text="断连按钮" width="80" height="25" />
+			</HorizontalLayout>
+			<HorizontalLayout />
+		</VerticalLayout>
+	</HorizontalLayout>
+	
+	<HorizontalLayout height="100">
+		<VerticalLayout>
+			<HorizontalLayout>
+				<Edit name="EditFileSel" height="25" text="" maxwidth="160" />
+				<Button name="FileSelButton" height="25" text="文件选择" maxwidth="80" />
+			</HorizontalLayout>
+			
+			<HorizontalLayout>
+				<Button name="FilePstButton" height="25" text="发送文件" maxwidth="80" />
+				<Button name="FileStpButton" height="25" text="暂停发送" maxwidth="80" />
+				<Button name="FileCclButton" height="25" text="取消发送" maxwidth="80" />
+				<HorizontalLayout />
+			</HorizontalLayout>
+			<Progress name="ProgressDemo1" text="Progress" width="200" height="20" foreimage="OspDemoSkins\progress_fore.png" min="0" max="100" value="0" hor="true" align="center" />
+			<HorizontalLayout />
+		</VerticalLayout>
+	</HorizontalLayout>
+	
+	<RichEdit name="EditRecv" bordercolor="#FF0000" bordersize="0" borderround="18,18" inset="4,2,4,2" bkcolor="#FFAAAAA0" bkcolor2="#FFF3F3F0" bkcolor3="#FFAAAAA0" font="1" multiline="true" vscrollbar="true" autovscroll="true" enabled="true" rich="true" readonly="false" text="<内容显示>">
+	</RichEdit>
+	
+	<RichEdit name="EditPost" bordercolor="#FF0000" bordersize="0" borderround="18,18" inset="4,2,4,2" bkcolor="#FFAAAAA0" bkcolor2="#FFF3F3F0" bkcolor3="#FFAAAAA0" font="1" multiline="true" vscrollbar="true" autovscroll="true" enabled="true" rich="true" readonly="false" text="<输入待发送的消息内容...>">
+	</RichEdit>
+	
+	<HorizontalLayout height="30">
+		<Button name="PostButton" height="25" text="发送" maxwidth="80" />
+		<HorizontalLayout />
+		<Button name="CloseButton" height="25" text="退出" maxwidth="80" />
+	</HorizontalLayout>
+  </VerticalLayout>
+</Window>
