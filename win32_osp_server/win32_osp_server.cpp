@@ -53,6 +53,9 @@ void CFrameWindowWnd::OnFinalMessage(HWND /*hWnd*/)
     delete this; 
 }
 
+// 消息处理按键;
+///////////////////////////////////////////////////
+
 // 发送按钮消息处理;
 void OnBnClickedPost(CEditUI* m_pEditPost)
 {
@@ -119,6 +122,7 @@ void OnBnClickedFilePos()
 {
     TCHAR szFolderPath[MAX_PATH] = {0};
     u16 uPos = 0;
+    u16 wIndex = 0;
 
     BROWSEINFO sInfo;
     ZeroMemory(&sInfo, sizeof(BROWSEINFO));
@@ -135,22 +139,28 @@ void OnBnClickedFilePos()
         // 取得文件夹名;
         if (SHGetPathFromIDList(lpidlBrowse, szFolderPath))    
         {
-            USES_CONVERSION;
-            char *buff = W2A(szFolderPath);
-            OspPrintf(TRUE, FALSE, "Get FilePosPath: %s\r\n", buff);
-            OspPrintf(TRUE, FALSE, "Get FileName: %s\r\n", m_fileInfo.strFileName);
+            // 将信息写入指定instance结点;
+            for (wIndex; wIndex < MAX_FILE_POST_INS; wIndex++)
+            {
+                if (g_uInsNo[wIndex].uCliInsNum != 0 && g_uInsNo[wIndex].nFlag == 0)
+                {
+                    USES_CONVERSION;
+                    char *buff = W2A(szFolderPath);
+                    OspPrintf(TRUE, FALSE, "Get FilePosPath: %s\r\n", buff);
+                    OspPrintf(TRUE, FALSE, "Get FileName: %s\r\n", g_uInsNo[wIndex].m_tFileInfo.strFileName);
 
-            // 获取需要写入的文件路径;
-            ZeroMemory(g_strFolderPath, MAX_PATH);
-            ZeroMemory(g_strFilePath, MAX_PATH);
+                    // 获取需要写入的文件路径;
+                    ZeroMemory(g_strFolderPath, MAX_PATH);
+                    ZeroMemory(g_strFilePath, MAX_PATH);
 
-            lstrcat(g_strFolderPath, szFolderPath);
-            lstrcat(g_strFilePath, szFolderPath);
-            lstrcat(g_strFilePath, L"\\");
-            lstrcat(g_strFilePath, A2W(m_fileInfo.strFileName));
-            char *BUFF = W2A(g_strFilePath);
-            OspPrintf(TRUE, FALSE, "Get FilePosPath & name: %s\r\n", BUFF);
-
+                    lstrcat(g_strFolderPath, szFolderPath);
+                    lstrcat(g_strFilePath, szFolderPath);
+                    lstrcat(g_strFilePath, L"\\");
+                    lstrcat(g_strFilePath, A2W(g_uInsNo[wIndex].m_tFileInfo.strFileName));
+                    char *BUFF = W2A(g_strFilePath);
+                    OspPrintf(TRUE, FALSE, "Get FilePosPath & name: %s\r\n", BUFF);
+                }
+            }
         }
     }
 
@@ -158,6 +168,7 @@ void OnBnClickedFilePos()
     {
         CoTaskMemFree(lpidlBrowse);
     }
+    return;
 }
 
 // 处理窗口通知消息，相应用户输入;
