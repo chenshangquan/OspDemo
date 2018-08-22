@@ -43,7 +43,9 @@ enum EM_DAEM_EVENT_TYPE
 {
     EVENT_SERVER_MSG_POST_INS_ALLOT = 1,
     EVENT_SERVER_FILE_POST_INS_ALLOT,
-    EVENT_CLIENT_FILE_POST_INS_ALLOT
+    EVENT_CLIENT_FILE_POST_INS_ALLOT,
+	EVENT_SERVER_FILE_POST_INS_RELEASE,
+	EVENT_CLIENT_FILE_POST_INS_RELEASE
 };
 
 enum INS_STATE_TYPE
@@ -108,7 +110,7 @@ UINT m_nLength = 0;                       // 待传送数据长度;
 // client read;
 TCHAR g_strFilePath[MAX_PATH] = _T("");
 TCHAR g_strFileName[MAX_FILE_NAME] = _T("");
-TCHAR g_strFolderPath[MAX_PATH] = _T("F:\\2");
+TCHAR g_strFolderPath[MAX_PATH] = _T("E:\\2");
 CHAR strFileLen[16] = {0};
 
 s32 g_PauseFlag;
@@ -425,20 +427,15 @@ void OnClientReceive(CMessage *const pMsg)
     strMsgGet = NULL;
 }
 
-//void ReceiveFilePacket(int nErrorCode)     //从Socket的接收缓冲区中读取数据;
-//void SendFilePacketEcho(int nFlag);        //向Client发送文件响应信息;
-//bool StoreFilePacket();                    //保存接收到的文件包;
-//bool IsFilePacket();                       //判断并保证文件包完整;
-
-// 
+// 根据intance ID，找到对应的全局变量索引;
 u16 FindInsIndex(u16 wSerPostInsNo)
 {
     u16 wIndex = 0;
 
     // 根据server端文件发送的instance ID，找到对应索引，获取文件写入路径信息;
-    for (wIndex = 0; wIndex < MAX_FILE_POST_INS; wIndex++)
-    {
-        if (g_uInsNo[wIndex].uSerInsNum == wSerPostInsNo)
+	for (wIndex = 0; wIndex < MAX_FILE_POST_INS; wIndex++)
+	{
+		if (g_uInsNo[wIndex].uSerInsNum == wSerPostInsNo)
         {
             return wIndex;
         }
@@ -447,6 +444,23 @@ u16 FindInsIndex(u16 wSerPostInsNo)
     return MAX_FILE_POST_INS;
 }
 
+void InsRelease(u16 wCliPostInsNo, u16 wSerPostInsNo)
+{
+	s8 achCliPostInsNoStr[4] = {0};
+	s8 achSerPostInsNoStr[4] = {0};
+
+	// 释放Client端文件发送的instance;
+	sprintf(achCliPostInsNoStr, "%d", wCliPostInsNo);
+	OspPost(MAKEIID(DEMO_APP_CLIENT_NO, CInstance::DAEMON), EVENT_CLIENT_FILE_POST_INS_RELEASE,
+		achCliPostInsNoStr, strlen(achCliPostInsNoStr),	CPublic::g_uNodeNum, MAKEIID(DEMO_APP_SERVER_NO, CPublic::g_uInsNum), 0, DEMO_POST_TIMEOUT);
+
+	// 释放Server端文件发送的instance;
+	sprintf(achSerPostInsNoStr, "%d", wCliPostInsNo);
+	OspPost(MAKEIID(DEMO_APP_SERVER_NO, CInstance::DAEMON), EVENT_SERVER_FILE_POST_INS_RELEASE,
+		achSerPostInsNoStr, strlen(achSerPostInsNoStr), 0, MAKEIID(DEMO_APP_SERVER_NO, CPublic::g_uInsNum), 0, DEMO_POST_TIMEOUT);
+}
+
+// 将接受到的包内容写入文件;
 bool StoreFilePacket(FILEMESSAGE *strFileMsgGet, u16 wSerPostInsNo)
 {
     DWORD nByte;
@@ -467,7 +481,6 @@ bool StoreFilePacket(FILEMESSAGE *strFileMsgGet, u16 wSerPostInsNo)
     g_uInsNo[wIndex].m_tFileInfo.fileStart = strFileMsgGet->fileStart;
     g_uInsNo[wIndex].m_tFileInfo.fileSize = strFileMsgGet->fileSize;
     
-
     // 创建文件并写入文件;
     HANDLE mFileW = CreateFile(g_uInsNo[wIndex].strFilePath, GENERIC_WRITE | GENERIC_READ, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
     if (mFileW == INVALID_HANDLE_VALUE)
@@ -483,9 +496,6 @@ bool StoreFilePacket(FILEMESSAGE *strFileMsgGet, u16 wSerPostInsNo)
     CloseHandle(mFileW);
 
     // 记录本次偏移位置;
-    //m_fileInfo.lastStart = m_fileInfo.fileStart;
-    //m_fileInfo.lastSize = m_fileInfo.fileSize;
-
     g_uInsNo[wIndex].m_tFileInfo.lastStart = g_uInsNo[wIndex].m_tFileInfo.fileStart;
     g_uInsNo[wIndex].m_tFileInfo.lastSize  = g_uInsNo[wIndex].m_tFileInfo.fileSize;
 
@@ -534,8 +544,6 @@ void SendFilePacketEcho(s32 nFlag, u16 wCliPostInsNo, u16 wSerPostInsNo, u16 wIn
         return;
     }
 
-    //strFileMsgAck.fileStart   = m_fileInfo.lastStart; 
-    //strFileMsgAck.fileSize    = m_fileInfo.lastSize;
     strFileMsgAck.fileStart      = g_uInsNo[wSerIndex].m_tFileInfo.lastStart;
     strFileMsgAck.fileSize       = g_uInsNo[wSerIndex].m_tFileInfo.lastSize;
     strFileMsgAck.wCliPostInsNum = wCliPostInsNo;
@@ -550,6 +558,7 @@ void SendFilePacketEcho(s32 nFlag, u16 wCliPostInsNo, u16 wSerPostInsNo, u16 wIn
     OspPost(MAKEIID(DEMO_APP_CLIENT_NO, wCliPostInsNo), EVENT_FILE_POST2C, newPacket, uLen, CPublic::g_uNodeNum);
 }
 
+// 接受包处理函数;
 void ReceiveFilePacket(FILEMESSAGE *strFileMsgGet)
 {
     LONG64 iValue = 0;
@@ -568,7 +577,7 @@ void ReceiveFilePacket(FILEMESSAGE *strFileMsgGet)
     pProgress->SetValue((int)iValue);
     pProgress->SetText(szProgressText);
 
-    m_fileInfo.filePacketIndex++;
+    //m_fileInfo.filePacketIndex++;
 #endif
 
     // 根据instanceID，获取instance索引号;
@@ -595,6 +604,7 @@ void ReceiveFilePacket(FILEMESSAGE *strFileMsgGet)
             // 文件校验并显示结果; --TODO
             ::MessageBox(NULL, _T("已完成文件传输！文件检验OK!!"), _T("文件传输结果"), NULL);
 #endif
+			InsRelease(wCliPostInsNo, wSerPostInsNo);
             return;
         }
 
@@ -732,7 +742,6 @@ void FileMsgInit(CMessage *const pMsg)
 {
     u16 wIndex = 0;
     
-
     // 获取收到的消息内容;
     u16 MsgLen = pMsg->length;
     char *strMsgGet = new char[MsgLen + 1];
@@ -761,7 +770,7 @@ void FileMsgInit(CMessage *const pMsg)
             lstrcat(g_strFilePath, g_strFolderPath);
             lstrcat(g_strFilePath, L"\\");
             lstrcat(g_strFilePath, A2W(g_uInsNo[wIndex].m_tFileInfo.strFileName));
-            //g_uInsNo[wIndex].nFlag = 1;     //使用置0, 默认时;
+            //g_uInsNo[wIndex].nFlag = 1;     //使用时置1;
 
             ZeroMemory(g_uInsNo[wIndex].strFilePath, MAX_PATH);
             lstrcpy(g_uInsNo[wIndex].strFilePath, g_strFilePath);
@@ -793,6 +802,7 @@ void FileLenInit(CMessage *const pMsg)
     {
         if (g_uInsNo[wIndex].uSerInsNum != 0 && g_uInsNo[wIndex].nFlag == 0)
         {
+			g_uInsNo[wIndex].nFlag = 1;     //使用时置1;
             // 获取文件长度信息;
             g_uInsNo[wIndex].m_tFileInfo.fileLength = atoi(strMsgGet);
 
@@ -984,6 +994,71 @@ void ClientFilePostInsAllot(CMessage *const pcMsg, CApp* pcApp)
     return;
 }
 
+// 服务端文件发送instance释放;
+void SerFilePostInsRelease(CMessage *const pcMsg, CApp* pcApp)
+{
+	u16 wInsid = 0;
+	u16 wIndex = 0;
+	CInstance *pCInst = NULL;
+
+	// 获取收到的消息内容;
+	u16 wMsgLen = pcMsg->length;
+	char *pchMsgGet = new char[wMsgLen + 1];
+	ZeroMemory(pchMsgGet, wMsgLen + 1);
+	memcpy_s(pchMsgGet, wMsgLen, pcMsg->content, wMsgLen);
+
+	wInsid = atoi(pchMsgGet);
+
+	// 释放全局变量;
+	for (wIndex = 0; wIndex < MAX_FILE_POST_INS; wIndex++)
+	{
+		if (g_uInsNo[wIndex].uSerInsNum == wInsid)
+		{
+			g_uInsNo[wIndex].uSerInsNum = 0;
+			g_uInsNo[wIndex].nFlag = 0;
+		}
+	}
+
+	// 释放instance资源;
+	pCInst = pcApp->GetInstance(wInsid);
+	pCInst->m_curState = IDLE_STATE;
+	pCInst->m_lastState = STATE_WORK;
+
+
+}
+
+// 客户端文件发送instance释放;
+void CliFilePostInsRelease(CMessage *const pcMsg, CApp* pcApp)
+{
+	u16 wInsid = 0;
+	u16 wIndex = 0;
+	CInstance *pCInst = NULL;
+
+	// 获取收到的消息内容;
+	u16 wMsgLen = pcMsg->length;
+	char *pchMsgGet = new char[wMsgLen + 1];
+	ZeroMemory(pchMsgGet, wMsgLen + 1);
+	memcpy_s(pchMsgGet, wMsgLen, pcMsg->content, wMsgLen);
+
+	wInsid = atoi(pchMsgGet);
+
+	// 释放全局变量;
+	for (wIndex = 0; wIndex < MAX_FILE_POST_INS; wIndex++)
+	{
+		if (g_uInsNo[wIndex].uCliInsNum == wInsid)
+		{
+			g_uInsNo[wIndex].uCliInsNum = 0;
+			g_uInsNo[wIndex].nFlag = 0;
+		}
+	}
+
+	// 释放instance资源;
+	pCInst = pcApp->GetInstance(wInsid);
+	pCInst->m_curState = IDLE_STATE;
+	pCInst->m_lastState = STATE_WORK;
+
+
+}
 
 void CDemoInstance::DaemonInstanceEntry(CMessage *const pcMsg, CApp* pcApp)
 {
@@ -1004,6 +1079,14 @@ void CDemoInstance::DaemonInstanceEntry(CMessage *const pcMsg, CApp* pcApp)
         ClientFilePostInsAllot(pcMsg, pcApp);
         NextState(STATE_WORK);
         break;
+	case EVENT_SERVER_FILE_POST_INS_RELEASE:
+		SerFilePostInsRelease(pcMsg, pcApp);
+		NextState(STATE_WORK);
+		break;
+	case EVENT_CLIENT_FILE_POST_INS_RELEASE:
+		CliFilePostInsRelease(pcMsg, pcApp);
+		NextState(STATE_WORK);
+		break;
     default:
         // Def_Fuction(pMsg);
         break;

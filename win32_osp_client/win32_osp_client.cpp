@@ -202,7 +202,8 @@ void OnBnClickedFileSel()
                 ZeroMemory(g_uInsNo[wIndex].m_tFileInfo.strFileName, MAX_FILE_NAME + 1);
                 memcpy_s(g_uInsNo[wIndex].m_tFileInfo.strFileName, MAX_FILE_NAME, Buff, strlen(Buff));
 
-                OspPrintf(TRUE, FALSE, "Start to send fileInfo, name is : %s, length : %d\n", g_uInsNo[wIndex].m_tFileInfo.strFileName, g_uInsNo[wIndex].m_tFileInfo.fileLength);
+                OspPrintf(TRUE, FALSE, "Start to send fileInfo, name is : %s, length : %d\n",
+					g_uInsNo[wIndex].m_tFileInfo.strFileName, g_uInsNo[wIndex].m_tFileInfo.fileLength);
 
                 // 文件名发送到服务端;
                 OspPost(MAKEIID(DEMO_APP_SERVER_NO, CPublic::g_uInsNum), EVENT_FILE_ATR_POST, g_uInsNo[wIndex].m_tFileInfo.strFileName,
@@ -315,9 +316,9 @@ void OnBnClickedFilePst()
     }
 	wSerPostInsNo = g_uInsNo[wIndex].uSerInsNum;
 
+	OspPrintf(TRUE, FALSE, "wCliPostInsNo:%d, wSerPostInsNo:%d, wIndex:%d\r\n", wCliPostInsNo, wSerPostInsNo, wIndex);
 	// 发送第一个包;
     sendFileInfo(0, 0, "0", wCliPostInsNo, wSerPostInsNo, wIndex);
-    OspPrintf(TRUE, FALSE, "wCliPostInsNo:%d, wSerPostInsNo:%d, wIndex:%d\r\n", wCliPostInsNo, wSerPostInsNo, wIndex);
 
     // 初始化暂停标记位;
     g_PauseFlag = 0;
