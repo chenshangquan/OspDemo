@@ -2,7 +2,7 @@
 <Window mininfo="300,400" size="400,600">
   <Font name="幼圆" size="16" default="true" />
   <VerticalLayout bkcolor="#FFC0C0C0">
-	<HorizontalLayout height="100">
+	<HorizontalLayout height="50">
 		<VerticalLayout>
 			<HorizontalLayout>
 				<Button name="ConfigButton" text="配置按钮" height="25" maxwidth="80" />
@@ -12,21 +12,27 @@
 		</VerticalLayout>
 	</HorizontalLayout>
 	
-	<HorizontalLayout height="100">
+	<HorizontalLayout height="250">
 		<VerticalLayout>
-			<HorizontalLayout>
+			<HorizontalLayout height="50">
 				<Edit name="EditFolderSel" height="25" text="" maxwidth="160" />
 				<Button name="RecvPosButton" height="25" text="存储选择" maxwidth="80" />
 			</HorizontalLayout>
 			
-			<HorizontalLayout>
+			<HorizontalLayout height="25">
 				<Button name="FileRecvButton" height="25" text="文件接收" maxwidth="80" />
 				<Button name="FileRecvStpButton" height="25" text="暂停接收" maxwidth="80" />
 				<Button name="FileRecvCclButton" height="25" text="取消接收" maxwidth="80" />
 				<HorizontalLayout />
 			</HorizontalLayout>
 			
-			<Progress name="ProgressDemo1" text="Progress" width="200" height="20" foreimage="OspDemoSkins\progress_fore.png" min="0" max="100" value="0" hor="true" align="center" />
+			<!--Progress name="ProgressDemo1" text="Progress" width="200" height="20" foreimage="OspDemoSkins\progress_fore.png" min="0" max="100" value="0" hor="true" align="center" /-->
+			<List name="LoadList" width="300" height="175" bkcolor="#FFFFFFFF" itemtextcolor="#FF000000" itembkcolor="#FFE2DDDF" itemselectedtextcolor="#FF000000" itemselectedbkcolor="#FFC1E3FF" itemhottextcolor="#FF000000" itemhotbkcolor="#FFE9F5FF" itemdisabledtextcolor="#FFCCCCCC" itemdisabledbkcolor="#FFFFFFFF" >
+                <ListHeader name="domain" bkimage="List/list_header_bg.png">
+                    <ListHeaderItem text="序号" width="40" height="20" minwidth="16"  sepwidth="1" align="center" hotimage="List/list_header_hot.png" pushedimage="List/list_header_pushed.png" sepimage="List/list_header_sep.png" />
+                    <ListHeaderItem text="文件名称" width="200" height="20" minwidth="16"  sepwidth="1" align="center" hotimage="List/list_header_hot.png" pushedimage="List/list_header_pushed.png" sepimage="List/list_header_sep.png" />
+                </ListHeader>
+            </List>
 			<HorizontalLayout />
 		</VerticalLayout>
 	</HorizontalLayout>

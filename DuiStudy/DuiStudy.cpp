@@ -94,6 +94,39 @@ public:
                 pWebBrowser->Release();
             }
         }
+
+        CDuiString str;
+        CListUI* pList = static_cast<CListUI*>(m_PaintManager.FindControl(_T("ListDemo1")));
+
+        // 添加List列表内容，必须先Add(pListElement)，再SetText
+        for (int i = 0; i < 100; i++)
+        {
+            CListTextElementUI* pListElement = new CListTextElementUI;
+            pListElement->SetTag(i);
+            pList->Add(pListElement);
+
+            str.Format(_T("%d"), i);
+            pListElement->SetText(0, str);
+            pListElement->SetText(1, _T("haha"));
+        }
+    }
+
+    virtual void Notify( TNotifyUI& msg )
+    {
+        if(msg.sType == _T("selectchanged"))
+        {
+            CDuiString    strName     = msg.pSender->GetName();
+            CTabLayoutUI* pControl = static_cast<CTabLayoutUI*>(m_PaintManager.FindControl(_T("tabTest")));
+
+            if(strName == _T("OptionDemo1"))
+                pControl->SelectItem(0);
+            else if(strName == _T("OptionDemo2"))
+                pControl->SelectItem(1);
+            else if(strName == _T("OptionDemo3"))
+                pControl->SelectItem(2);
+        }
+
+        __super::Notify(msg);
     }
 
 };

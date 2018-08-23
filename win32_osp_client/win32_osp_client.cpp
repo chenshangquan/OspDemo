@@ -35,7 +35,9 @@ void CFrameWindowWnd::Init()
     m_pBtnPost        = static_cast<CButtonUI*>(m_pm.FindControl(_T("PostButton")));
     m_pBtnClose       = static_cast<CButtonUI*>(m_pm.FindControl(_T("CloseButton")));
     // Progress
-    m_pProgress       = static_cast<CProgressUI*>(m_pm.FindControl(_T("ProgressDemo1")));    
+    //m_pProgress       = static_cast<CProgressUI*>(m_pm.FindControl(_T("ProgressDemo1"))); 
+    // List
+    m_pList         = static_cast<CListUI*>(m_pm.FindControl(_T("LoadList")));
 }
 
 LPCTSTR CFrameWindowWnd::GetWindowClassName() const
@@ -232,36 +234,6 @@ void OnBnClickedFileSel()
         {
             OspPrintf(TRUE, FALSE, "Client:OnBnClickedFileSel, Get instance index error!!\r\n");
         }
-#if 0
-        m_fileInfo.fileLength = dwSize;
-        m_fileInfo.filePacketNum = m_fileInfo.fileLength/(MAX_FILE_PACKET - 4 - 2*sizeof(int)) + 1;
-        m_length = m_fileInfo.fileLength;
-        CloseHandle(mFileR);
-
-        // 发送基本文件信息到server端，及文件名、文件大小;
-        ZeroMemory(m_fileInfo.strFileName, MAX_FILE_NAME + 1);
-        memcpy_s(m_fileInfo.strFileName, MAX_FILE_NAME, Buff, strlen(Buff));
-        //wcstombs(m_fileInfo.strFileName, szFileName, strlen(szFileName));
-        OspPrintf(TRUE, FALSE, "Start to send fileInfo, name is : %s, length : %d\n", m_fileInfo.strFileName, m_length);
-
-        // 文件名发送到服务端;
-        OspPost(MAKEIID(DEMO_APP_SERVER_NO, CPublic::g_uInsNum), EVENT_FILE_ATR_POST, m_fileInfo.strFileName,
-            strlen(m_fileInfo.strFileName), CPublic::g_uNodeNum, MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO));
-
-        ZeroMemory(strFileLen, 10);
-        sprintf(strFileLen, "%d", m_fileInfo.fileLength);
-
-        // 文件长度发送到服务端;
-        OspPost(MAKEIID(DEMO_APP_SERVER_NO, CPublic::g_uInsNum), EVENT_FILE_LEN_POST, strFileLen,
-            strlen(strFileLen), CPublic::g_uNodeNum, MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO));
-
-
-        m_fileInfo.fileStart = 0;
-        m_fileInfo.fileSize = 0;
-        m_fileInfo.lastStart = 0;
-        m_fileInfo.lastSize = 0;
-        m_fileInfo.filePacketIndex = 0;
-#endif
     }
     return;
 }
@@ -272,8 +244,6 @@ void OnBnClickedFilePst()
     u16 wIndex = 0;
     u16 wCliPostInsNo = 0;
     u16 wSerPostInsNo = 0;
-
-    OspPrintf(TRUE, FALSE, "start to call sendFileInfo\n");
 
     // 获取客户端申请得到的instance;
     for (wIndex; wIndex < MAX_FILE_POST_INS; wIndex++)
@@ -293,7 +263,7 @@ void OnBnClickedFilePst()
 			USES_CONVERSION;
 			ZeroMemory(g_uInsNo[wIndex].strFilePath, MAX_PATH);
 			lstrcpy(g_uInsNo[wIndex].strFilePath, g_strFilePath);
-            OspPrintf(TRUE, FALSE, "Instance -> path is: %s\r\n", W2A(g_uInsNo[wIndex].strFilePath));
+            OspPrintf(TRUE, FALSE, "Instance(%d) -> path is: %s\r\n", wIndex, W2A(g_uInsNo[wIndex].strFilePath));
             break;
         }
     }

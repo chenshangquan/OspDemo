@@ -36,6 +36,8 @@ public:
     CButtonUI* m_pBtnPost;          // 发送消息;
     CButtonUI* m_pBtnClose;         // 退出;
 
-    CProgressUI* m_pProgress;       //进度条;
+    //CProgressUI* m_pProgress;       //进度条;
 
+    // list
+    CListUI* m_pList;               // 列表;
 };

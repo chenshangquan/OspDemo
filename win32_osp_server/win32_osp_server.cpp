@@ -35,7 +35,9 @@ void CFrameWindowWnd::Init()
     m_pBtnPost       = static_cast<CButtonUI*>(m_pm.FindControl(_T("PostButton")));
     m_pBtnClose      = static_cast<CButtonUI*>(m_pm.FindControl(_T("CloseButton")));
     // Progress
-    m_pProgress      = static_cast<CProgressUI*>(m_pm.FindControl(_T("ProgressDemo1")));    
+    //m_pProgress      = static_cast<CProgressUI*>(m_pm.FindControl(_T("ProgressDemo1"))); 
+    // list
+    m_pList          = static_cast<CListUI*>(m_pm.FindControl(_T("LoadList")));
 }
 
 LPCTSTR CFrameWindowWnd::GetWindowClassName() const

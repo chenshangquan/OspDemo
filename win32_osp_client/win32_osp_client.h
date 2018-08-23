@@ -19,13 +19,14 @@ public:
 public:
     CPaintManagerUI m_pm;
     
-    // 定义控件指针;
+    // edit
     CEditUI* m_pEditIPAddr;     // ip地址;
     CEditUI* m_pEditPort;       // 监听port;
     CEditUI* m_pEditPost;       // 待发送内容;
     CEditUI* m_pEditRecv;       // 待接收显示内容;
     CEditUI* m_pEditSelFile;    // 输出选择的文件路径;
     
+    //  button
     CButtonUI* m_pBtnConnect;       // 连接服务器;
     CButtonUI* m_pBtnDisConnect;    // 断开服务器连接;
     CButtonUI* m_pBtnSelFile2Pst;   // 选择待发送文件;
@@ -36,7 +37,11 @@ public:
     CButtonUI* m_pBtnPost;          // 发送消息;
     CButtonUI* m_pBtnClose;         // 退出;
 
-    CProgressUI* m_pProgress;       //进度条;
+    // progress
+    //CProgressUI* m_pProgress;       //进度条;
+
+    // list
+    CListUI* m_pList;               // 列表;
 
 
 };

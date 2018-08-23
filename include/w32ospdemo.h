@@ -110,7 +110,7 @@ UINT m_nLength = 0;                       // 待传送数据长度;
 // client read;
 TCHAR g_strFilePath[MAX_PATH] = _T("");
 TCHAR g_strFileName[MAX_FILE_NAME] = _T("");
-TCHAR g_strFolderPath[MAX_PATH] = _T("E:\\2");
+TCHAR g_strFolderPath[MAX_PATH] = _T("F:\\2");
 CHAR strFileLen[16] = {0};
 
 s32 g_PauseFlag;
@@ -209,9 +209,14 @@ TInStatus g_uInsNo[MAX_FILE_POST_INS] = {0};
 
 void sendFileInfo(s32 fStart,s32 fSize,char *fHead, u16 wCliPostInsNo, u16 wSerPostInsNo, u16 wIndex)
 {
-    LONG64 iValue = 0;
+    u16 wListIndex = 0;
+    u16 wListTag = 0;
+    s64 iValue = 0;
     TCHAR szProgress[16] = {0};
-    CProgressUI* pProgress =  pFrame->m_pProgress;
+    CDuiString strListTag;
+
+    //CProgressUI* pProgress =  pFrame->m_pProgress;
+
 #if 0
     // Client端，进度条绘画并显示;
     iValue = 100 * g_uInsNo[wIndex].nPktIndex / m_fileInfo.filePacketNum;
@@ -219,6 +224,29 @@ void sendFileInfo(s32 fStart,s32 fSize,char *fHead, u16 wCliPostInsNo, u16 wSerP
     pProgress->SetValue((int)iValue);
     pProgress->SetText(szProgress);
 #endif
+    // 获取列表窗口指针;
+    CListUI* pLoadList = pFrame->m_pList;
+
+    // 获取List Tag;
+    for (wListIndex = 0; wListIndex < MAX_FILE_POST_INS; wListIndex++)
+    {
+        if (g_uInsNo[wListIndex].uCliInsNum != 0)
+        {
+            wListTag++;
+        }
+    }
+
+    // 起始位置为0, 计数需建议;
+    wListTag--;
+
+    CListTextElementUI* pListElement = new CListTextElementUI;
+    pListElement->SetTag(wListTag);
+    pLoadList->Add(pListElement);
+
+    USES_CONVERSION;
+    strListTag.Format(_T("%d"), wListTag);
+    pListElement->SetText(0, strListTag);
+    pListElement->SetText(1, A2W(g_uInsNo[wIndex].m_tFileInfo.strFileName));
     UINT nFilePacketBuff = MAX_FILE_PACKET - 4 - 2*sizeof(s32) - 3*sizeof(u16);
 
     FILEMESSAGE strFileMsg;
@@ -569,7 +597,7 @@ void ReceiveFilePacket(FILEMESSAGE *strFileMsgGet)
     u16 wSerPostInsNo = strFileMsgGet->wSerPostInsNum;
 	u16 wIndex = strFileMsgGet->wIndex;
 
-    CProgressUI* pProgress =  pFrame->m_pProgress;
+    //CProgressUI* pProgress =  pFrame->m_pProgress;
 #if 0
     // Server端，进度条绘画并显示;
     iValue = 100 * m_fileInfo.filePacketIndex / m_fileInfo.filePacketNum;

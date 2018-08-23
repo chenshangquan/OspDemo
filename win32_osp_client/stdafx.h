@@ -7,6 +7,7 @@
 
 #pragma comment(lib,"../osplib/lib/debug/OspLib.lib") 
 #pragma comment(lib,"../10-common/lib/debug/win32_2010/DuiLib_u.lib") 
+//#pragma comment(lib,"../DuiLib_Redrain/bin/DuiLib_d.lib")
 
 #include "targetver.h"
 
