@@ -96,11 +96,12 @@ public:
         }
 
         CDuiString str;
-        CListUI* pList = static_cast<CListUI*>(m_PaintManager.FindControl(_T("ListDemo1")));
+        CListUI* pcLoadList = static_cast<CListUI*>(m_PaintManager.FindControl(_T("ListDemo1")));
 
         // 添加List列表内容，必须先Add(pListElement)，再SetText
-        for (int i = 0; i < 100; i++)
+        for (int i = 0; i < 5; i++)
         {
+#if 0
             CListTextElementUI* pListElement = new CListTextElementUI;
             pListElement->SetTag(i);
             pList->Add(pListElement);
@@ -108,9 +109,24 @@ public:
             str.Format(_T("%d"), i);
             pListElement->SetText(0, str);
             pListElement->SetText(1, _T("haha"));
+#else
+            CListContainerElementUI* pcListContainer = new CListContainerElementUI;
+            //CLabelUI* pcLable = new CLabelUI;
+            //CListTextElementUI* pcListText = new CListTextElementUI;
+            CProgressUI* pcProgress = new CProgressUI;
+
+            pcListContainer->ApplyAttributeList(_T("height=\"25\" align=\"right\""));
+            pcProgress->ApplyAttributeList(_T("text=\"Progress\" width=\"59\" height=\"20\" foreimage=\"OspDemoSkins\\progress_fore.png\"\
+                min=\"0\" max=\"100\" value=\"50\" hor=\"true\" align=\"center\""));
+            //pcListContainer->Add(pcProgress);
+            //pcLable->ApplyAttributeList(_T("text=\"打开\" mouse=\"false\""));
+            pcListContainer->Add(pcProgress);
+            pcLoadList->Add(pcListContainer);
+#endif
         }
     }
 
+#if 0
     virtual void Notify( TNotifyUI& msg )
     {
         if(msg.sType == _T("selectchanged"))
@@ -128,7 +144,7 @@ public:
 
         __super::Notify(msg);
     }
-
+#endif
 };
 
 

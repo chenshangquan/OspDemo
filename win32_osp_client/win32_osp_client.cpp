@@ -175,7 +175,7 @@ void OnBnClickedFileSel()
         OspPost(MAKEIID(DEMO_APP_CLIENT_NO, CInstance::DAEMON), EVENT_CLIENT_FILE_POST_INS_ALLOT, NULL, 0,
             0, MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO), 0, DEMO_POST_TIMEOUT);
 
-        CPublic::m_swTmpNum = 0;
+        CPublic::m_swTmpNum = 0;  // 便于判断是否获得服务端的回复消息;
         // 让服务端分配一个空闲的instance，用于处理文件接收流程;
         OspPost(MAKEIID(DEMO_APP_SERVER_NO, CInstance::DAEMON), EVENT_SERVER_FILE_POST_INS_ALLOT,
             NULL, 0, CPublic::g_uNodeNum, MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO), 0, DEMO_POST_TIMEOUT);
@@ -187,52 +187,54 @@ void OnBnClickedFileSel()
             OspPrintf(TRUE, FALSE, "Client: CreateFile fail!\r\n");
             return;
         }
-        Sleep(3000);
+
+        Sleep(1000);
+
         // 获取客户端申请得到的instance;
-        for (wIndex = 0; wIndex < MAX_FILE_POST_INS; wIndex++)
+        for (wIndex = 0; wIndex < g_tInsNo.size(); wIndex++)
         {
-            if (g_uInsNo[wIndex].uCliInsNum != 0 && g_uInsNo[wIndex].nFlag == 0)
+            if (g_tInsNo[wIndex].uInsNum != 0 && g_tInsNo[wIndex].nUsedFlag == 0)
             {
                 // 获取文件大小和分包数;
                 DWORD dwHigh = 0;
                 DWORD dwSize = GetFileSize(mFileR, &dwHigh);
                 //__int64 nFileSize = ((__int64)dwHigh << 32) + dwSize;//对于大文件需要将高32位和低32位拼接成64位整形
-                g_uInsNo[wIndex].m_tFileInfo.fileLength = dwSize;
-                g_uInsNo[wIndex].m_tFileInfo.filePacketNum = g_uInsNo[wIndex].m_tFileInfo.fileLength/(MAX_FILE_PACKET - 4 - 2*sizeof(s32)- 3*sizeof(u16)) + 1;
+                g_tInsNo[wIndex].m_tFileInfo.fileLength = dwSize;
+                g_tInsNo[wIndex].m_tFileInfo.filePacketNum = g_tInsNo[wIndex].m_tFileInfo.fileLength/(MAX_FILE_PACKET - 4 - 2*sizeof(s32)- 3*sizeof(u16)) + 1;
 
                 // 发送基本文件信息到server端，及文件名、文件大小;
-                ZeroMemory(g_uInsNo[wIndex].m_tFileInfo.strFileName, MAX_FILE_NAME + 1);
-                memcpy_s(g_uInsNo[wIndex].m_tFileInfo.strFileName, MAX_FILE_NAME, Buff, strlen(Buff));
+                ZeroMemory(g_tInsNo[wIndex].m_tFileInfo.strFileName, MAX_FILE_NAME + 1);
+                memcpy_s(g_tInsNo[wIndex].m_tFileInfo.strFileName, MAX_FILE_NAME, Buff, strlen(Buff));
 
                 OspPrintf(TRUE, FALSE, "Start to send fileInfo, name is : %s, length : %d\n",
-					g_uInsNo[wIndex].m_tFileInfo.strFileName, g_uInsNo[wIndex].m_tFileInfo.fileLength);
+					g_tInsNo[wIndex].m_tFileInfo.strFileName, g_tInsNo[wIndex].m_tFileInfo.fileLength);
 
                 // 文件名发送到服务端;
-                OspPost(MAKEIID(DEMO_APP_SERVER_NO, CPublic::g_uInsNum), EVENT_FILE_ATR_POST, g_uInsNo[wIndex].m_tFileInfo.strFileName,
-                    strlen(g_uInsNo[wIndex].m_tFileInfo.strFileName), CPublic::g_uNodeNum, MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO));
+                OspPost(MAKEIID(DEMO_APP_SERVER_NO, CPublic::g_uInsNum), EVENT_FILE_ATR_POST, g_tInsNo[wIndex].m_tFileInfo.strFileName,
+                    strlen(g_tInsNo[wIndex].m_tFileInfo.strFileName), CPublic::g_uNodeNum, MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO));
 
                 ZeroMemory(strFileLen, 16);
-                sprintf(strFileLen, "%d", g_uInsNo[wIndex].m_tFileInfo.fileLength);
+                sprintf(strFileLen, "%d", g_tInsNo[wIndex].m_tFileInfo.fileLength);
 
                 // 文件长度发送到服务端;
                 OspPost(MAKEIID(DEMO_APP_SERVER_NO, CPublic::g_uInsNum), EVENT_FILE_LEN_POST, strFileLen,
                     strlen(strFileLen), CPublic::g_uNodeNum, MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO));
 
                 // 其余成员数据初始化为0;
-                g_uInsNo[wIndex].m_tFileInfo.fileStart = 0;
-                g_uInsNo[wIndex].m_tFileInfo.fileSize = 0;
-                g_uInsNo[wIndex].m_tFileInfo.lastStart = 0;
-                g_uInsNo[wIndex].m_tFileInfo.lastSize = 0;
-                g_uInsNo[wIndex].m_tFileInfo.filePacketIndex = 0;
-                g_uInsNo[wIndex].m_tFileInfo.nFilePacketBuff = 0;
+                g_tInsNo[wIndex].m_tFileInfo.fileStart = 0;
+                g_tInsNo[wIndex].m_tFileInfo.fileSize = 0;
+                g_tInsNo[wIndex].m_tFileInfo.lastStart = 0;
+                g_tInsNo[wIndex].m_tFileInfo.lastSize = 0;
+                g_tInsNo[wIndex].m_tFileInfo.filePacketIndex = 0;
+                g_tInsNo[wIndex].m_tFileInfo.nFilePacketBuff = 0;
                 break;
             }
         }
         CloseHandle(mFileR);
 
-        if (wIndex == MAX_FILE_POST_INS)
+        if (wIndex == g_tInsNo.size())
         {
-            OspPrintf(TRUE, FALSE, "Client:OnBnClickedFileSel, Get instance index error!!\r\n");
+            OspPrintf(TRUE, FALSE, "Client: OnBnClickedFileSel, Get instance index error!!\r\n");
         }
     }
     return;
@@ -245,30 +247,30 @@ void OnBnClickedFilePst()
     u16 wCliPostInsNo = 0;
     u16 wSerPostInsNo = 0;
 
-    // 获取客户端申请得到的instance;
-    for (wIndex; wIndex < MAX_FILE_POST_INS; wIndex++)
+    // 获取客户端申请得到的instance, 初始化文件传输控制信息;
+    for (wIndex; wIndex < g_tInsNo.size(); wIndex++)
     {
-        if (g_uInsNo[wIndex].uCliInsNum != 0 && g_uInsNo[wIndex].nFlag == 0)
+        if (g_tInsNo[wIndex].uInsNum != 0 && g_tInsNo[wIndex].nUsedFlag == 0)
         {
-            wCliPostInsNo = g_uInsNo[wIndex].uCliInsNum;
-            g_uInsNo[wIndex].nFlag = 1;     //使用置1;
+            wCliPostInsNo = g_tInsNo[wIndex].uInsNum;
+            g_tInsNo[wIndex].nUsedFlag = 1;     //使用置1;
 
             // 初始化;
-            g_uInsNo[wIndex].uSerInsNum  = 0;
-            g_uInsNo[wIndex].nLastStart  = 0;
-            g_uInsNo[wIndex].nLastSize   = 0;
-            g_uInsNo[wIndex].nPktIndex   = 0;
-            g_uInsNo[wIndex].nErrorIndex = 0;
+            g_tInsNo[wIndex].nLastStart  = 0;
+            g_tInsNo[wIndex].nLastSize   = 0;
+            g_tInsNo[wIndex].nPktIndex   = 0;
+            g_tInsNo[wIndex].dnProgValve = 0;
+            g_tInsNo[wIndex].nErrorIndex = 0;
 
 			USES_CONVERSION;
-			ZeroMemory(g_uInsNo[wIndex].strFilePath, MAX_PATH);
-			lstrcpy(g_uInsNo[wIndex].strFilePath, g_strFilePath);
-            OspPrintf(TRUE, FALSE, "Instance(%d) -> path is: %s\r\n", wIndex, W2A(g_uInsNo[wIndex].strFilePath));
+			ZeroMemory(g_tInsNo[wIndex].strFilePath, MAX_PATH);
+			lstrcpy(g_tInsNo[wIndex].strFilePath, g_strFilePath);
+            OspPrintf(TRUE, FALSE, "Instance(%d) -> path is: %s\r\n", wIndex, W2A(g_tInsNo[wIndex].strFilePath));
             break;
         }
     }
 
-    if (wIndex == MAX_FILE_POST_INS)
+    if (wIndex == g_tInsNo.size())
     {
         OspPrintf(TRUE, FALSE, "Client:OnBnClickedFilePst, Get instance index error!!\r\n");
         return;
@@ -280,11 +282,11 @@ void OnBnClickedFilePst()
         Sleep(1000);
     }
 
-    if (CPublic::m_swTmpNum != 0)
+    if (CPublic::m_swTmpNum == 0)
     {
-        g_uInsNo[wIndex].uSerInsNum = CPublic::m_swTmpNum;
+        OspPrintf(TRUE, FALSE, "Client: Get server instance ID failed!!\r\n", wCliPostInsNo, wSerPostInsNo, wIndex);
     }
-	wSerPostInsNo = g_uInsNo[wIndex].uSerInsNum;
+    wSerPostInsNo = CPublic::m_swTmpNum;
 
 	OspPrintf(TRUE, FALSE, "wCliPostInsNo:%d, wSerPostInsNo:%d, wIndex:%d\r\n", wCliPostInsNo, wSerPostInsNo, wIndex);
 	// 发送第一个包;
