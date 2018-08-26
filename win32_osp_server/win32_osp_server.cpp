@@ -38,6 +38,7 @@ void CFrameWindowWnd::Init()
     //m_pProgress      = static_cast<CProgressUI*>(m_pm.FindControl(_T("ProgressDemo1"))); 
     // list
     m_pList          = static_cast<CListUI*>(m_pm.FindControl(_T("LoadList")));
+	m_pListHeader	 = static_cast<CListHeaderUI*>(m_pm.FindControl(_T("LoadListHeader")));
 }
 
 LPCTSTR CFrameWindowWnd::GetWindowClassName() const

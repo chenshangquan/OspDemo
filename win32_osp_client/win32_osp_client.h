@@ -42,6 +42,7 @@ public:
 
     // list
     CListUI* m_pList;               // 列表;
+	CListHeaderUI* m_pListHeader;	// 列表头;
 
 
 };

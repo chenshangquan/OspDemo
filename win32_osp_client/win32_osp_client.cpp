@@ -38,6 +38,7 @@ void CFrameWindowWnd::Init()
     //m_pProgress       = static_cast<CProgressUI*>(m_pm.FindControl(_T("ProgressDemo1"))); 
     // List
     m_pList         = static_cast<CListUI*>(m_pm.FindControl(_T("LoadList")));
+	m_pListHeader	= static_cast<CListHeaderUI*>(m_pm.FindControl(_T("LoadListHeader")));
 }
 
 LPCTSTR CFrameWindowWnd::GetWindowClassName() const
@@ -221,6 +222,8 @@ void OnBnClickedFileSel()
                     strlen(strFileLen), CPublic::g_uNodeNum, MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO));
 
                 // 其余成员数据初始化为0;
+				g_tInsNo[wIndex].m_nPuase = 0;
+				g_tInsNo[wIndex].m_nCancel = 0;
                 g_tInsNo[wIndex].m_tFileInfo.fileStart = 0;
                 g_tInsNo[wIndex].m_tFileInfo.fileSize = 0;
                 g_tInsNo[wIndex].m_tFileInfo.lastStart = 0;
@@ -298,11 +301,16 @@ void OnBnClickedFilePst()
 }
 
 // 文件暂停传输;
-void OnBnClickedFileStp()
+void OnBnClickedFileStp(u16 wIndex)
 {
-    BOOL32 BRet = 0;
     OspPrintf(TRUE, FALSE, "SuspendThread.\r\n\r\n\r\n");
-    g_PauseFlag = !g_PauseFlag;
+	if (wIndex == MAX_FILE_POST_INS)
+	{
+		// 暂停所有;
+		return;
+	}
+
+	g_tInsNo[wIndex].m_nPuase = !g_tInsNo[wIndex].m_nPuase;
     Sleep(1);
     return;
 }
@@ -344,16 +352,37 @@ void CFrameWindowWnd::Notify(TNotifyUI& msg)
         {
             OnBnClickedFilePst();
         }
-        // 文件发送停止;
+        // 文件发送停止按键;
         if (msg.pSender->GetName() == _T("FileStpButton"))
         {
-            OnBnClickedFileStp();
+            OnBnClickedFileStp(MAX_FILE_POST_INS);
         }
+		if (msg.pSender->GetName() == _T("FileStpButton0"))
+		{
+			OnBnClickedFileStp(0);
+		}
+		if (msg.pSender->GetName() == _T("FileStpButton1"))
+		{
+			OnBnClickedFileStp(1);
+		}
+		if (msg.pSender->GetName() == _T("FileStpButton2"))
+		{
+			OnBnClickedFileStp(2);
+		}
+		if (msg.pSender->GetName() == _T("FileStpButton3"))
+		{
+			OnBnClickedFileStp(3);
+		}
+		if (msg.pSender->GetName() == _T("FileStpButton4"))
+		{
+			OnBnClickedFileStp(4);
+		}
         // 文件发送取消按键;
         if (msg.pSender->GetName() == _T("FileCclButton"))
         {
             OnBnClickedFileCcl();
         }
+		// 
     }
     if (msg.sType == _T("return"))
     {

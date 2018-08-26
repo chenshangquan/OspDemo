@@ -10,6 +10,7 @@ CFrameWindowWnd* pFrame = NULL;
 #define MAX_POST_FILE_PACK_LEN 1024
 #define MAX_INS_NO 10
 #define MAX_INS_STR_NO 16
+#define MAX_STR_LEN 16
 #define MAX_FILE_PACKET 10240 * 2
 #define MAX_FILE_NAME 128
 #define MAX_THREADNO 3
@@ -68,13 +69,13 @@ enum FILE_PACKET_TYPE
 // 包的结构体;
 struct FILEMESSAGE
 {
-    CHAR fileHead[4];       // 标志作用;
-    s32  fileStart;         // 包中数据在整个文件中的起始位置标志;
-    s32  fileSize;          // 包中数据的长度;
+    s8 fileHead[4];       // 标志作用;
+    u32  fileStart;         // 包中数据在整个文件中的起始位置标志;
+    u32  fileSize;          // 包中数据的长度;
     u16  wCliPostInsNum;    // 包中记录客户端的发送instanceID;
     u16  wSerPostInsNum;    // 包中记录服务端的发送instanceID;
     u16  wIndex;            // 包中记录客户端的发送instance索引号;
-    BYTE filePacket[MAX_FILE_PACKET - 4 - 2*sizeof(int)];       // 包中所传输的文件数据;
+    u8 filePacket[MAX_FILE_PACKET - 4 - 2*sizeof(int)];       // 包中所传输的文件数据;
 };
 
 // 文件信息结构体;
@@ -95,7 +96,7 @@ typedef struct tagFileInfo
     // 上一次包的大小;
     int lastSize;
     // 文件总长度;
-    DWORD fileLength;
+    u32 fileLength;
     // 文件名称;
     char strFileName[MAX_FILE_NAME + 1];
 }TFileInfo;
@@ -111,7 +112,7 @@ UINT m_nLength = 0;                       // 待传送数据长度;
 // client read;
 TCHAR g_strFilePath[MAX_PATH] = _T("");
 TCHAR g_strFileName[MAX_FILE_NAME] = _T("");
-TCHAR g_strFolderPath[MAX_PATH] = _T("F:\\2");
+TCHAR g_strFolderPath[MAX_PATH] = _T("E:\\2");
 CHAR strFileLen[16] = {0};
 
 s32 g_PauseFlag;
@@ -129,17 +130,53 @@ public:
     static u16 m_swTmpNum;
 };
 
-#if 0
-class CFileInfo
+// CDemoListContainerElementUI类函数声明;
+class CDemoListContainerElementUI : public CListContainerElementUI
 {
 public:
-    CFileInfo();
-    virtual ~CFileInfo();
-public:
-
+	void SetPos(RECT rc);
+	CListHeaderUI *m_pHeader;
 };
-#endif
 
+// CDemoListContainerElementUI类函数定义;
+void CDemoListContainerElementUI::SetPos(RECT rc)  
+{  
+	CContainerUI::SetPos(rc);  
+	if (m_pOwner == NULL)
+	{
+		return;
+	}
+	if (m_pHeader == NULL)  
+	{  
+		return;  
+	}  
+	TListInfoUI* pInfo = m_pOwner->GetListInfo();  
+	int nCount = m_items.GetSize();  
+	for (int i = 0; i < nCount; i++)  
+	{  
+		CControlUI *pHorizontalLayout = static_cast<CControlUI*>(m_items[i]);  
+		// if (pHorizontalLayout != NULL)   
+		// {   
+		// RECT rtHeader = pHeaderItem->GetPos();   
+		// RECT rt = pHorizontalLayout->GetPos();   
+		// rt.left = pInfo->rcColumn[i].left;   
+		// rt.right = pInfo->rcColumn[i].right;   
+		// pHorizontalLayout->SetPos(rt);   
+		// }   
+
+		CListHeaderItemUI *pHeaderItem = static_cast<CListHeaderItemUI*>(m_pHeader->GetItemAt(i));  
+		if (pHorizontalLayout != NULL && pHeaderItem != NULL)  
+		{  
+			RECT rtHeader = pHeaderItem->GetPos();  
+			RECT rt = pHorizontalLayout->GetPos();  
+			rt.left = rtHeader.left;  
+			rt.right = rtHeader.right;  
+			pHorizontalLayout->SetPos(rt);  
+		}
+	} 
+}
+
+// CDemoInstance类函数声明;
 class CDemoInstance : public CInstance
 {
 private:
@@ -183,15 +220,6 @@ u32 CPublic::g_uAppNum   = 0;
 u16 CPublic::g_uInsNum   = 0;
 u16 CPublic::m_swTmpNum  = 0;
 
-#if 0 // 全局变量初始化;
-s32 CPublic::m_lastStart = 0;
-s32 CPublic::m_lastSize  = 0;
-s32 CPublic::m_PktIndex  = 0;
-s32 CPublic::m_errorIndex = 0;
-#endif
-// CDemoInstance 类定义及初始化;
-
-
 // 临时全局变量;
 typedef struct tagInStatus
 {
@@ -203,64 +231,32 @@ typedef struct tagInStatus
     s64 dnProgValve;
     s32 nErrorIndex;
 	TCHAR strFilePath[MAX_PATH];
+	s32 m_nPuase;			// 文件停止发送标志;
+	s32 m_nCancel;			// 文件取消发送标志;
     TFileInfo m_tFileInfo;
 }TInStatus;
-
-//TInStatus g_tInsNo[MAX_FILE_POST_INS] = {0};
 vector<TInStatus> g_tInsNo;
 
 void sendFileInfo(s32 fStart,s32 fSize,char *fHead, u16 wCliPostInsNo, u16 wSerPostInsNo, u16 wIndex)
 {
     u16 wListIndex = 0;
     u16 wListItemNum = 0;
-    TCHAR awchProgress[16] = {0};
+	s8 achProgress[MAX_FILE_NAME] = {0};
+	s8 achBtnName[MAX_STR_LEN]  = {0};
+	s8 achPrgName[MAX_STR_LEN]  = {0};
+    s8 achTmpName[MAX_FILE_NAME]  = {0};
     CDuiString strListTag;
+	CProgressUI* pcPrg = NULL;
 
-    //CProgressUI* pProgress =  pFrame->m_pProgress;
+	ZeroMemory(achPrgName, MAX_STR_LEN);
+	sprintf(achPrgName, "DemoProgress%u", wIndex);
+    // 文件传输进度数值;
     g_tInsNo[wIndex].dnProgValve = 100 * g_tInsNo[wIndex].nPktIndex / g_tInsNo[wIndex].m_tFileInfo.filePacketNum;
-#if 0
-    // Client端，进度条绘画并显示;
-    iValue = 100 * g_tInsNo[wIndex].nPktIndex / m_fileInfo.filePacketNum;
-    wsprintf(szProgress, L"Progress(%ld%%)", iValue);
-    pProgress->SetValue((int)iValue);
-    pProgress->SetText(szProgress);
-#endif
-    // 获取列表窗口指针;
-    CListUI* pcLoadList = pFrame->m_pList;
 
-#if 0
-    CListTextElementUI* pListElement = new CListTextElementUI;
-    pListElement->SetTag(wListTag);
-    pLoadList->Add(pListElement);
-
-    USES_CONVERSION;
-    strListTag.Format(_T("%d"), wListTag);
-    pListElement->SetText(0, strListTag);
-    pListElement->SetText(1, A2W(g_tInsNo[wIndex].m_tFileInfo.strFileName));
-#endif
-
-#if 0
-    // 绘图;
-    pcLoadList->RemoveAll();    // 清除重绘;
-    for (wListIndex = 0; wListIndex < g_tInsNo.size(); wListIndex++)
-    {
-        CListContainerElementUI* pcListContainer = new CListContainerElementUI;
-        //CListTextElementUI* pcListText = new CListTextElementUI;
-        CProgressUI* pcProgress = new CProgressUI;
-
-        pcListContainer->ApplyAttributeList(_T("height=\"25\" align=\"right\""));
-        pcProgress->ApplyAttributeList(_T("width=\"59\" height=\"20\" foreimage=\"OspDemoSkins\\progress_fore.png\"\
-                                          min=\"0\" max=\"100\" hor=\"true\" align=\"center\""));
-        wsprintf(awchProgress, L"%s(%ld%%)",g_tInsNo[wListIndex].m_tFileInfo.strFileName, g_tInsNo[wListIndex].dnProgValve);
-        pcProgress->SetValue((int)g_tInsNo[wListIndex].dnProgValve);
-        pcProgress->SetText(awchProgress);
-        pcListContainer->Add(pcProgress);
-        pcLoadList->Add(pcListContainer);
-
-    }
-#endif
-
-    UINT nFilePacketBuff = MAX_FILE_PACKET - 4 - 2*sizeof(s32) - 3*sizeof(u16);
+	// 获取列表窗口指针;
+	CListUI* pcLoadList = pFrame->m_pList;
+	
+	u32 nFilePacketBuff = MAX_FILE_PACKET - 4 - 2*sizeof(s32) - 3*sizeof(u16);
 
     FILEMESSAGE strFileMsg;
     // 定义用于发送文件数据的文件包，fileHead定义为“FFF”;
@@ -296,6 +292,18 @@ void sendFileInfo(s32 fStart,s32 fSize,char *fHead, u16 wCliPostInsNo, u16 wSerP
             // 文件校验并显示结果; --TODO
             ::MessageBox(NULL, _T("已完成文件传输！文件检验OK!!"), _T("文件传输结果"), NULL);
 #endif
+			USES_CONVERSION;
+			// 获取控件进度条指针;
+			pcPrg = static_cast<CProgressUI*>(pFrame->m_pm.FindControl(A2W(achPrgName)));
+
+			// 进度条赋值;
+			ZeroMemory(achProgress, MAX_FILE_NAME);
+			sprintf(achProgress, "%s(%d%%)", g_tInsNo[wIndex].m_tFileInfo.strFileName, 100);
+			pcPrg->SetValue(100);
+			pcPrg->SetText(A2W(achProgress));
+
+			pcLoadList->RemoveAt(wIndex);
+
             return;
         }
         // 发送第一个包;
@@ -304,6 +312,53 @@ void sendFileInfo(s32 fStart,s32 fSize,char *fHead, u16 wCliPostInsNo, u16 wSerP
             // 传输出错标志、包索引置0;
             g_tInsNo[wIndex].nErrorIndex = 0;
             g_tInsNo[wIndex].nPktIndex   = 0;
+
+			// 绘图;
+			pcLoadList->RemoveAll();    // 清除重绘;
+			for (wListIndex = 0; wListIndex < g_tInsNo.size(); wListIndex++)
+			{
+				CDemoListContainerElementUI* pcListContainer = new CDemoListContainerElementUI;
+				pcListContainer->m_pHeader = pFrame->m_pListHeader;
+				CProgressUI* pcProgress = new CProgressUI;
+				CHorizontalLayoutUI* pcHorizontalLayout = new CHorizontalLayoutUI;
+				CButtonUI* pcButtonStp = new CButtonUI;
+				CButtonUI* pcButtonCcl = new CButtonUI;
+
+				pcListContainer->ApplyAttributeList(_T("height=\"25\" align=\"right\""));
+
+				// 进度条控件添加;
+				USES_CONVERSION;
+				pcProgress->ApplyAttributeList(_T("width=\"200\" height=\"20\" foreimage=\"OspDemoSkins\\progress_fore.png\"\
+												  min=\"0\" max=\"100\" hor=\"true\" align=\"center\""));
+				pcProgress->SetName(A2W(achPrgName));
+				ZeroMemory(achProgress, MAX_FILE_NAME);
+				sprintf(achProgress, "%s(%ld%%)", g_tInsNo[wListIndex].m_tFileInfo.strFileName, g_tInsNo[wListIndex].dnProgValve);
+				pcProgress->SetValue((int)g_tInsNo[wListIndex].dnProgValve);
+				pcProgress->SetText(A2W(achProgress));
+				pcListContainer->Add(pcProgress);
+
+				//pcHorizontalLayout->ApplyAttributeList(_T(""));
+
+				// 暂停按键控件添加;
+				ZeroMemory(achBtnName, MAX_STR_LEN);
+				sprintf(achBtnName, "FileStpButton%u", wIndex);
+				pcButtonStp->ApplyAttributeList(_T("text=\"S\" width=\"25\" height=\"20\""));
+				pcButtonStp->SetName(A2W(achBtnName));
+				pcHorizontalLayout->Add(pcButtonStp);
+
+				// 取消按键控件添加;
+				pcButtonCcl->ApplyAttributeList(_T("name=\"FileStpButton\" text=\"C\" width=\"25\" height=\"20\""));
+				pcHorizontalLayout->Add(pcButtonCcl);
+
+				pcListContainer->Add(pcHorizontalLayout);
+				pcLoadList->Add(pcListContainer);
+
+				//delete pcListContainer;
+				//delete pcProgress;
+				//delete pcHorizontalLayout;
+				//delete pcButtonStp;
+				//delete pcButtonCcl;
+			}
 
             // 考虑只有一个包的情况;
             if (g_tInsNo[wIndex].m_tFileInfo.fileLength <= nFilePacketBuff)
@@ -326,6 +381,15 @@ void sendFileInfo(s32 fStart,s32 fSize,char *fHead, u16 wCliPostInsNo, u16 wSerP
         // 接收到server端回复的正常确认包;
         else if (!strcmp(fHead,"OK!"))
         {
+			USES_CONVERSION;
+			pcPrg = static_cast<CProgressUI*>(pFrame->m_pm.FindControl(A2W(achPrgName)));
+
+			// 进度条赋值;
+			ZeroMemory(achProgress, MAX_FILE_NAME);
+			sprintf(achProgress, "%s(%ld%%)", g_tInsNo[wIndex].m_tFileInfo.strFileName, g_tInsNo[wIndex].dnProgValve);
+			pcPrg->SetValue((s32)g_tInsNo[wIndex].dnProgValve);
+			pcPrg->SetText(A2W(achProgress));
+
             // 传输出错标志置0;
             g_tInsNo[wIndex].nErrorIndex = 0;
             // 包索引进行累加;
@@ -456,7 +520,7 @@ void OnClientReceive(CMessage *const pMsg)
 	u16 wIndex     = strFileMsg->wIndex;
 
     // 暂停发送;
-    while(g_PauseFlag != 0)
+    while(g_tInsNo[wIndex].m_nPuase != 0)
     {
         Sleep(1000);
     }
@@ -675,6 +739,7 @@ void ReceiveFilePacket(FILEMESSAGE *strFileMsgGet)
     return;
 }
 
+// CDemoInstance 类定义及初始化;
 // InstanceEntry:event 消息处理函数定义;
 //////////////////////////////////////////////
 
