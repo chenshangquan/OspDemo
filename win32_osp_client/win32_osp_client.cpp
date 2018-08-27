@@ -4,7 +4,7 @@
 
 #include "stdafx.h"
 #include "win32_osp_client.h"
-#include "../include/w32ospdemo.h"
+#include "win32_osp_client_com.h"
 #include <Shlobj.h>
 #include <shlwapi.h>
 
@@ -59,6 +59,70 @@ void CFrameWindowWnd::OnFinalMessage(HWND /*hWnd*/)
 // 消息处理按键;
 ///////////////////////////////////////////////////
 
+// 配置消息处理按钮;
+void OnBnClickedConnect()
+{
+    u32 dwIpv4Addr = 0;
+    u32 dwTcpPort = 0;
+    u32 dwLocalIP = 0;
+    s32 nNodeNum = 0;
+
+    // 获取Ipv4Addr及TcpPort;
+    CEditUI *pcEditIPAddr = pFrame->m_pEditIPAddr;
+    CEditUI *pcEditPort = pFrame->m_pEditPort;
+    LPCTSTR pStrIPAddr = (pcEditIPAddr->GetText()).GetData();
+    LPCTSTR pStrPort = (pcEditPort->GetText()).GetData();
+
+    if (IsIpFormatRight(pStrIPAddr) != TRUE)
+    {
+        ::MessageBox(NULL, _T("INVALID IPADDRESS"), _T("Config Result"), NULL);
+        return;
+    }
+
+    // Ipv4Addr及TcpPort转换为整型;
+    dwIpv4Addr = inet_addr(CW2A(pStrIPAddr));
+    dwTcpPort = atoi(CW2A(pStrPort));
+
+    // OSP初始化;
+    OspInit(TRUE, 2520);
+
+    // OSP初始化结果查询;
+    if (IsOspInitd() != TRUE)
+    {
+        OspPrintf(TRUE, FALSE, "OSP Init Failed!!\r\n");
+        return;
+    }
+    OspPrintf(TRUE, FALSE, "OSP Init OK!!\r\n");
+
+    // 创建监听结点;
+
+    // 连接外部结点;
+    nNodeNum = OspConnectTcpNode(dwIpv4Addr, dwTcpPort, 10,
+        3, 0, &dwLocalIP);
+
+    if (INVALID_NODE == nNodeNum)
+    {
+        OspPrintf(TRUE, FALSE, "Connection Result:INVALID NODE\r\n");
+        ::MessageBox(NULL, _T("INVALID NODE"), _T("Connect Result"), NULL);
+        return;
+    }
+    else
+    {
+        OspPrintf(TRUE, FALSE, "Connect Result:SUCCESSFUL. Node Number:%d\r\n", nNodeNum);
+        //::MessageBox(NULL, _T("SUCCESSFUL!!"), _T("Connect Result"), NULL);
+
+        // 创建APP
+        s32 nCrtRet = g_cDemoApp.CreateApp("DemoClient", DEMO_APP_CLIENT_NO, DEMO_APP_PRIO, DEMO_APP_QUE_SIZE); //APPID = 2
+
+        // 客户端默认分配instance 1，负责消息互传流程;
+
+        // 服务端分配到一个空闲的instance， 负责消息互传任务;
+        s32 nPostRet = OspPost(MAKEIID(DEMO_APP_SERVER_NO, CInstance::DAEMON), EVENT_SERVER_MSG_POST_INS_ALLOT,
+            NULL, 0, nNodeNum, MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO), 0, DEMO_POST_TIMEOUT);
+    }
+    return;
+}
+
 // 发送消息处理按钮;
 void OnBnClickedPost(CEditUI* m_pEditPost)
 {
@@ -69,64 +133,6 @@ void OnBnClickedPost(CEditUI* m_pEditPost)
     // 发送消息到server端;
     OspPrintf(TRUE, FALSE, "client start to send a message to server: %s , length = %d\n", strMsg, strlen(strMsg));
 	s32 nPostRet = OspPost(MAKEIID(DEMO_APP_SERVER_NO, CPublic::g_uInsNum), EVENT_MSG_POST, strMsg, strlen(strMsg), CPublic::g_uNodeNum, MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO));
-}
-
-// 配置消息处理按钮;
-void OnBnClickedConnect()
-{
-    u32 dwIpv4Addr = 0;
-    u32 dwTcpPort = 0;
-    u32 dwLocalIP = 0;
-
-    // 获取Ipv4Addr及TcpPort;
-    CEditUI *pEditIPAddr = pFrame->m_pEditIPAddr;
-    CEditUI *pEditPort = pFrame->m_pEditPort;
-    LPCTSTR pStrIPAddr = (pEditIPAddr->GetText()).GetData();
-    LPCTSTR pStrPort = (pEditPort->GetText()).GetData();
-
-    if (IsIpFormatRight(pStrIPAddr) != TRUE)
-    {
-        ::MessageBox(NULL, _T("INVALID IPADDRESS"), _T("Config Result"), NULL);
-        return;
-    }
-
-    USES_CONVERSION;
-    dwIpv4Addr = inet_addr(W2A(pStrIPAddr));
-    dwTcpPort = atoi(W2A(pStrPort));
-
-    // OSP初始化;
-    OspInit(TRUE, 2520);
-    // OSP初始化结果查询;
-    if (IsOspInitd() == TRUE)
-    {
-        OspPrintf(TRUE, FALSE, "OSP Init OK!!\r\n");
-    }
-
-    // 创建监听结点;
-
-    // 连接外部结点;
-    CPublic::g_uNodeNum = OspConnectTcpNode(dwIpv4Addr, dwTcpPort, 10,
-        3, 0, &dwLocalIP);
-
-    if (INVALID_NODE == CPublic::g_uNodeNum)
-    {
-        OspPrintf(TRUE, FALSE, "Connection Result:INVALID NODE\r\n");
-        ::MessageBox(NULL, _T("INVALID NODE"), _T("Connect Result"), NULL);
-        //MessageBox(_T("INVALID NODE"), _T("Connect Result"), MB_OK);
-    }
-    else
-    {
-        OspPrintf(TRUE, FALSE, "Connect Result:SUCCESSFUL. Node Number:%d\r\n", CPublic::g_uNodeNum);
-        ::MessageBox(NULL, _T("SUCCESSFUL!!"), _T("Connect Result"), NULL);
-
-        //创建APP
-        s32 nCrtRet = g_cDemoApp.CreateApp("DemoClient", DEMO_APP_CLIENT_NO, DEMO_APP_PRIO, DEMO_APP_QUE_SIZE); //APPID = 2
-
-        // 让服务端分配到一个空闲的instance， 负责消息互传任务;
-        s32 nPostRet = OspPost(MAKEIID(DEMO_APP_SERVER_NO, CInstance::DAEMON), EVENT_SERVER_MSG_POST_INS_ALLOT,
-            NULL, 0, CPublic::g_uNodeNum, MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO), 0, DEMO_POST_TIMEOUT);
-    }
-	return;
 }
 
 // 文件选择处理按钮;
@@ -295,8 +301,6 @@ void OnBnClickedFilePst()
 	// 发送第一个包;
     sendFileInfo(0, 0, "0", wCliPostInsNo, wSerPostInsNo, wIndex);
 
-    // 初始化暂停标记位;
-    g_PauseFlag = 0;
     return;
 }
 

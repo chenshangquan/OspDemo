@@ -4,7 +4,7 @@
 
 #include "stdafx.h"
 #include "win32_osp_server.h"
-#include "../include/w32ospdemo.h"
+#include "win32_osp_server_com.h"
 #include <Shlobj.h>
 #include <shlwapi.h>
 
@@ -65,8 +65,7 @@ void OnBnClickedPost(CEditUI* m_pEditPost)
     // 发送窗口内容;
     //char strMsg[MAX_POST_MSG_LEN + 1];
     //ZeroMemory(strMsg, MAX_POST_MSG_LEN + 1);
-    USES_CONVERSION;
-    char *strMsg = W2A((m_pEditPost->GetText()).GetData());
+    char *strMsg = CW2A((m_pEditPost->GetText()).GetData());
 
     // 获取窗口内容;
     OspPrintf(TRUE, FALSE, "server start to send a message to client: %s, length = %d\n", strMsg, strlen(strMsg));
