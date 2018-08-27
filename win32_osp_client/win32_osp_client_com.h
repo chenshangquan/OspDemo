@@ -50,7 +50,7 @@ enum EM_EVENT_TYPE
 
 enum EM_DAEM_EVENT_TYPE
 {
-    EVENT_CLIENT_MSG_POST_INS_ALLOT = 1,
+	EVENT_SERVER_MSG_POST_INS_ALLOT = 1,
     EVENT_SERVER_MSG_POST_INS_ALLOT_ACK,
     EVENT_CLIENT_FILE_POST_INS_ALLOT,
     EVENT_SERVER_FILE_POST_INS_ALLOT_ACK,
@@ -72,6 +72,20 @@ enum FILE_PACKET_TYPE
     FILE_PACKET_END,
     FILE_PACKET_CANCEL
 };
+
+typedef struct tagMsgAckInfo
+{
+	u16 m_wNodeNo;
+	u16 m_wInsNo;
+	s8  m_achMsg[MAX_POST_MSG_LEN];
+}TMsgAckInfo;
+
+typedef struct tagFilePktAckInfo
+{
+	u16 m_wNodeNo;
+	u16 m_wInsNo;
+	s8  m_achMsg[MAX_FILE_PACKET];
+}TFilePktAckInfo;
 
 // 包的结构体;
 struct FILEMESSAGE
@@ -209,7 +223,10 @@ typedef zTemplate<CDemoInstance, MAX_INS_NO> CDemoApp;
 CDemoApp g_cDemoApp;
 
 // 临时全局变量;
-vector<CDemoInstance> g_tInsNo;
+CDemoInstance g_cMsgPstInsNo;
+vector<CDemoInstance> g_cFilePstInsNo;
+u32 g_uNodeNum;
+u32 g_uCliMsgPstInsNum;
 
 void sendFileInfo(s32 fStart,s32 fSize,char *fHead, u16 wCliPostInsNo, u16 wSerPostInsNo, u16 wIndex)
 {
@@ -533,9 +550,6 @@ u16 FindInsIndex(u16 wSerPostInsNo)
 // server端申请消息发送的instance回复处理函数;
 void MsgPostInsAllotAck(CMessage *const pMsg)
 {
-    CDemoInstance cDemoIns;
-    cDemoIns.CDemoInstance();
-
     // 消息内容提取;
     u16 MsgLen = pMsg->length;
     char *strMsgGet = new char[MsgLen + 1];
@@ -543,8 +557,7 @@ void MsgPostInsAllotAck(CMessage *const pMsg)
     ZeroMemory(strMsgGet, MsgLen + 1);
     memcpy_s(strMsgGet, MsgLen, pMsg->content, MsgLen);
 
-    cDemoIns.m_uInsNum = atoi(strMsgGet);
-
+    g_uCliMsgPstInsNum = atoi(strMsgGet);
 
 }
 

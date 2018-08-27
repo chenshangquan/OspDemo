@@ -43,17 +43,17 @@ enum EM_EVENT_TYPE
 
 enum EM_DAEM_EVENT_TYPE
 {
-    EVENT_SERVER_MSG_POST_INS_ALLOT = 1,
-    EVENT_SERVER_FILE_POST_INS_ALLOT,
-    EVENT_CLIENT_FILE_POST_INS_ALLOT,
-	EVENT_SERVER_FILE_POST_INS_RELEASE,
+	EVENT_SERVER_MSG_POST_INS_ALLOT = 1,
+	EVENT_SERVER_MSG_POST_INS_ALLOT_ACK,
+	EVENT_CLIENT_FILE_POST_INS_ALLOT,
+	EVENT_SERVER_FILE_POST_INS_ALLOT_ACK,
 	EVENT_CLIENT_FILE_POST_INS_RELEASE
 };
 
 enum INS_STATE_TYPE
 {
     IDLE_STATE = 0,
-    STATE_ACK,
+    //STATE_ACK,
     //STATE_TERM,
     STATE_WORK
 };
@@ -65,9 +65,22 @@ enum FILE_PACKET_TYPE
     FILE_PACKET_END,
     FILE_PACKET_CANCEL
 };
+typedef struct tagMsgAckInfo
+{
+	u16 m_wNodeNo;
+	u16 m_wInsNo;
+	s8  m_achMsg[MAX_POST_MSG_LEN];
+}TMsgAckInfo;
+
+typedef struct tagFilePktAckInfo
+{
+	u16 m_wNodeNo;
+	u16 m_wInsNo;
+	s8  m_achMsg[MAX_FILE_PACKET];
+}TFilePktAckInfo;
 
 // 包的结构体;
-struct FILEMESSAGE
+typedef struct tagFileMessage
 {
     s8  fileHead[4];       // 标志作用;
     u32 fileStart;         // 包中数据在整个文件中的起始位置标志;
@@ -76,7 +89,7 @@ struct FILEMESSAGE
     u16 wSerPostInsNum;    // 包中记录服务端的发送instanceID;
     u16 wIndex;            // 包中记录客户端的发送instance索引号;
     u8  filePacket[MAX_FILE_PACKET - 4 - 2*sizeof(int)];       // 包中所传输的文件数据;
-};
+}TFileMessage;
 
 // 文件信息结构体;
 typedef struct tagFileInfo
@@ -114,21 +127,6 @@ TCHAR g_strFilePath[MAX_PATH] = _T("");
 TCHAR g_strFileName[MAX_FILE_NAME] = _T("");
 TCHAR g_strFolderPath[MAX_PATH] = _T("F:\\2");
 CHAR strFileLen[16] = {0};
-
-s32 g_PauseFlag;
-
-class CPublic
-{
-public:
-    CPublic();
-    virtual ~CPublic(); 
-    // 自定义全局变量或函数;
-public:
-    static u32 g_uNodeNum;
-    static u32 g_uAppNum;
-    static u16 g_uInsNum;
-    static u16 m_swTmpNum;
-};
 
 // CDemoListContainerElementUI类函数声明;
 class CDemoListContainerElementUI : public CListContainerElementUI
@@ -182,7 +180,7 @@ class CDemoInstance : public CInstance
 public:
     // Instance中的用户数据;
     u32 m_uNodeNum;
-    u16 m_uCliInsNum;
+    //u16 m_uCliInsNum;
     u16 m_uSerInsNum;
     s32 m_nUsedFlag;
 
@@ -203,45 +201,16 @@ public:
 public:
     CDemoInstance()
     {
-        u32 m_uNodeNum = 0;
-        u32 m_uAppNum  = 0;
-        u16 m_uInsNum  = 0;
-        s32 m_nUsedFlag = 0;
-
-        s32 m_nLastStart = 0;
-        s32 m_nLastSize = 0;
-        s32 m_nPktIndex = 0;
-        s64 m_dnProgValve = 0;
-        s32 m_nErrorIndex = 0;
-        //m_strFilePath[MAX_PATH] = {0};
-        s32 m_nPuase = 0;			// 文件停止发送标志;
-        s32 m_nCancel = 0;			// 文件取消发送标志;
-        //TFileInfo m_tFileInfo = {0};
     };
     ~CDemoInstance();
 };
-
-// CPublic 类定义及初始化;
-CPublic::CPublic()
-{
-
-}
-
-CPublic::~CPublic()
-{
-
-}
-
-u32 CPublic::g_uNodeNum  = 0;
-u32 CPublic::g_uAppNum   = 0;
-u16 CPublic::g_uInsNum   = 0;
-u16 CPublic::m_swTmpNum  = 0;
 
 // typedef zTemplate<CDemoInstance, 20, CDemoAppData, 20> CDemoApp;
 typedef zTemplate<CDemoInstance, MAX_INS_NO> CDemoApp;
 CDemoApp g_cDemoApp;
 
 // 临时全局变量;
+#if 0
 typedef struct tagInStatus
 {
     u16 uInsNum;
@@ -257,6 +226,11 @@ typedef struct tagInStatus
     TFileInfo m_tFileInfo;
 }TInStatus;
 vector<TInStatus> g_tInsNo;
+#endif
+
+CDemoInstance g_cMsgPstInsNo;
+vector<CDemoInstance> g_cFilePstInsNo;
+vector<u32> g_uNodeNum;
 
 void sendFileInfo(s32 fStart,s32 fSize,char *fHead, u16 wCliPostInsNo, u16 wSerPostInsNo, u16 wIndex)
 {
@@ -1022,7 +996,7 @@ u16 GetIdleInsID(CApp* pcApp)
     u16 wIndex = 0;
     CInstance *pCInst = NULL;
 
-    // 遍历所有instance，寻找到一个空闲的instance并返回;
+    // 遍历所有instance，寻找到第一个空闲的instance并返回;
     for (wIndex = 1; wIndex <= MAX_INS_NO; wIndex++)
     {
         pCInst = pcApp->GetInstance(wIndex);
@@ -1047,23 +1021,25 @@ u16 GetIdleInsID(CApp* pcApp)
 // 服务端消息发送instance分配;
 void ServerMsgPostInsAllot(CMessage *const pcMsg, CApp* pcApp)
 {
-    CDemoInstance cDemoIns;
-    cDemoIns.CDemoInstance;
-    s8 achInsNo[MAX_STR_LEN];
+	u32 uInsNum = 0;
+	s8  achInsNo[MAX_STR_LEN] = {0};
 
-    cDemoIns.m_uInsNum = GetIdleInsID(pcApp);
-    //g_uInsNum = GetIdleInsID(pcApp);
-    OspPrintf(TRUE, FALSE, "Server:Get a idle instance, ID: %d.\r\n", cDemoIns.m_uInsNum);
-    cDemoIns.m_uNodeNum = pcMsg->srcnode;
-    cDemoIns.m_nUsedFlag = 0;
-    // 记录服务端申请获得的instance信息;
-    g_tInsNo.push_back(cDemoIns);
+	// 消息内容提取;
+	u16 MsgLen = pMsg->length;
+	char *strMsgGet = new char[MsgLen + 1];
+
+	ZeroMemory(strMsgGet, MsgLen + 1);
+	memcpy_s(strMsgGet, MsgLen, pMsg->content, MsgLen);
+	OspPrintf(TRUE, FALSE, "message content is: %s, length is: %d.\n", strMsgGet, pMsg->length);
+
+	// 服务端获得空闲的instance ID;
+    uInsNum = GetIdleInsID(pcApp);
 
     ZeroMemory(achInsNo, MAX_STR_LEN);
-    sprintf(achInsNo, "%d", cDemoIns.m_uInsNum);
+    sprintf(achInsNo, "%d", uInsNum);
 
     // 服务端回复客户端，发送申请到的instance;
-    OspPost(MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO), EVENT_MSG_POST_INS_ALLOT_ACK, achInsNo, strlen(achInsNo), g_uNodeNum);
+    OspPost(MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO), EVENT_MSG_POST_INS_ALLOT_ACK, achInsNo, strlen(achInsNo), uNodeNum);
     
     return;
 }

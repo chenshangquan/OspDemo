@@ -65,7 +65,8 @@ void OnBnClickedConnect()
     u32 dwIpv4Addr = 0;
     u32 dwTcpPort = 0;
     u32 dwLocalIP = 0;
-    s32 nNodeNum = 0;
+    //s32 nNodeNum = 0;
+	s8 achAppName[MAX_STR_LEN];
 
     // 获取Ipv4Addr及TcpPort;
     CEditUI *pcEditIPAddr = pFrame->m_pEditIPAddr;
@@ -75,6 +76,7 @@ void OnBnClickedConnect()
 
     if (IsIpFormatRight(pStrIPAddr) != TRUE)
     {
+		OspPrintf(TRUE, FALSE, "INVALID IPADDRESS!!\r\n");
         ::MessageBox(NULL, _T("INVALID IPADDRESS"), _T("Config Result"), NULL);
         return;
     }
@@ -90,6 +92,7 @@ void OnBnClickedConnect()
     if (IsOspInitd() != TRUE)
     {
         OspPrintf(TRUE, FALSE, "OSP Init Failed!!\r\n");
+		::MessageBox(NULL, _T("OSP Init Failed!!"), _T("OSP Initialization Results"), NULL);
         return;
     }
     OspPrintf(TRUE, FALSE, "OSP Init OK!!\r\n");
@@ -97,10 +100,10 @@ void OnBnClickedConnect()
     // 创建监听结点;
 
     // 连接外部结点;
-    nNodeNum = OspConnectTcpNode(dwIpv4Addr, dwTcpPort, 10,
+    g_uNodeNum = OspConnectTcpNode(dwIpv4Addr, dwTcpPort, 10,
         3, 0, &dwLocalIP);
 
-    if (INVALID_NODE == nNodeNum)
+    if (INVALID_NODE == g_uNodeNum)
     {
         OspPrintf(TRUE, FALSE, "Connection Result:INVALID NODE\r\n");
         ::MessageBox(NULL, _T("INVALID NODE"), _T("Connect Result"), NULL);
@@ -108,17 +111,19 @@ void OnBnClickedConnect()
     }
     else
     {
-        OspPrintf(TRUE, FALSE, "Connect Result:SUCCESSFUL. Node Number:%d\r\n", nNodeNum);
+        OspPrintf(TRUE, FALSE, "Connect Result:SUCCESSFUL. Node Number:%d\r\n", g_uNodeNum);
         //::MessageBox(NULL, _T("SUCCESSFUL!!"), _T("Connect Result"), NULL);
 
-        // 创建APP
-        s32 nCrtRet = g_cDemoApp.CreateApp("DemoClient", DEMO_APP_CLIENT_NO, DEMO_APP_PRIO, DEMO_APP_QUE_SIZE); //APPID = 2
+		ZeroMemory(achAppName, MAX_STR_LEN);
+		sprintf_s(achAppName, "DemoClient%d", g_uNodeNum);
+        // 创建APP, APPID = 2
+        g_cDemoApp.CreateApp(achAppName, DEMO_APP_CLIENT_NO, DEMO_APP_PRIO, DEMO_APP_QUE_SIZE);
 
         // 客户端默认分配instance 1，负责消息互传流程;
 
         // 服务端分配到一个空闲的instance， 负责消息互传任务;
-        s32 nPostRet = OspPost(MAKEIID(DEMO_APP_SERVER_NO, CInstance::DAEMON), EVENT_SERVER_MSG_POST_INS_ALLOT,
-            NULL, 0, nNodeNum, MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO), 0, DEMO_POST_TIMEOUT);
+		//s32 nPostRet = OspPost(MAKEIID(DEMO_APP_SERVER_NO, CInstance::DAEMON), EVENT_SERVER_MSG_POST_INS_ALLOT,
+		//	NULL, 0, g_uNodeNum, MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO), 0, DEMO_POST_TIMEOUT);
     }
     return;
 }
@@ -127,12 +132,13 @@ void OnBnClickedConnect()
 void OnBnClickedPost(CEditUI* m_pEditPost)
 {
     // 获取窗口内容;
-    USES_CONVERSION;
-    char *strMsg = W2A((m_pEditPost->GetText()).GetData());
+	s8 *pchMsg = NULL;
+    pchMsg = CW2A((m_pEditPost->GetText()).GetData());
 
     // 发送消息到server端;
-    OspPrintf(TRUE, FALSE, "client start to send a message to server: %s , length = %d\n", strMsg, strlen(strMsg));
-	s32 nPostRet = OspPost(MAKEIID(DEMO_APP_SERVER_NO, CPublic::g_uInsNum), EVENT_MSG_POST, strMsg, strlen(strMsg), CPublic::g_uNodeNum, MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO));
+    OspPrintf(TRUE, FALSE, "client start to send a message to server: %s , length = %d\n", pchMsg, strlen(pchMsg));
+	OspPost(MAKEIID(DEMO_APP_SERVER_NO, CInstance::DAEMON), EVENT_SERVER_MSG_POST_INS_ALLOT, pchMsg, strlen(pchMsg),
+		g_uNodeNum, MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO), 0, DEMO_POST_TIMEOUT);
 }
 
 // 文件选择处理按钮;
