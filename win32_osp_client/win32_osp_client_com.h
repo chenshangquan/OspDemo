@@ -50,11 +50,14 @@ enum EM_EVENT_TYPE
 
 enum EM_DAEM_EVENT_TYPE
 {
-	EVENT_SERVER_MSG_POST_INS_ALLOT = 1,
-    EVENT_SERVER_MSG_POST_INS_ALLOT_ACK,
+    EVENT_CLIENT_MSG_POST_INS_ALLOT = 1,
+    EVENT_SERVER_MSG_POST_INS_ALLOT,
     EVENT_CLIENT_FILE_POST_INS_ALLOT,
-    EVENT_SERVER_FILE_POST_INS_ALLOT_ACK,
-	EVENT_CLIENT_FILE_POST_INS_RELEASE
+    EVENT_SERVER_FILE_POST_INS_ALLOT,
+    EVENT_CLIENT_FILE_POST_INS_RELEASE,
+    EVENT_SERVER_FILE_POST_INS_RELEASE,
+
+    EVENT_END
 };
 
 enum INS_STATE_TYPE
@@ -88,7 +91,7 @@ typedef struct tagFilePktAckInfo
 }TFilePktAckInfo;
 
 // 包的结构体;
-struct FILEMESSAGE
+typedef struct tagFileMessage
 {
     s8  fileHead[4];       // 标志作用;
     u32 fileStart;         // 包中数据在整个文件中的起始位置标志;
@@ -97,7 +100,7 @@ struct FILEMESSAGE
     u16 wSerPostInsNum;    // 包中记录服务端的发送instanceID;
     u16 wIndex;            // 包中记录客户端的发送instance索引号;
     u8  filePacket[MAX_FILE_PACKET - 4 - 2*sizeof(int)];       // 包中所传输的文件数据;
-};
+}TFileMessage;
 
 // 文件信息结构体;
 typedef struct tagFileInfo
@@ -223,11 +226,13 @@ typedef zTemplate<CDemoInstance, MAX_INS_NO> CDemoApp;
 CDemoApp g_cDemoApp;
 
 // 临时全局变量;
-CDemoInstance g_cMsgPstInsNo;
-vector<CDemoInstance> g_cFilePstInsNo;
-u32 g_uNodeNum;
-u32 g_uCliMsgPstInsNum;
+//CDemoInstance g_cMsgPstInsNo;
+vector<CDemoInstance*> g_pvcFilePstInsNo;
+u16 g_wNodeNum;
+u16 g_wCliFilePstInsNum;
 
+// 包发送;
+#if 0
 void sendFileInfo(s32 fStart,s32 fSize,char *fHead, u16 wCliPostInsNo, u16 wSerPostInsNo, u16 wIndex)
 {
     OspPrintf(TRUE, FALSE, "sendFileInfo.\r\n");
@@ -250,7 +255,7 @@ void sendFileInfo(s32 fStart,s32 fSize,char *fHead, u16 wCliPostInsNo, u16 wSerP
 	
 	u32 nFilePacketBuff = MAX_FILE_PACKET - 4 - 2*sizeof(s32) - 3*sizeof(u16);
 
-    FILEMESSAGE strFileMsg;
+    TFileMessage strFileMsg;
     // 定义用于发送文件数据的文件包，fileHead定义为“FFF”;
     strFileMsg.fileHead[0] = 'F';
     strFileMsg.fileHead[1] = 'F';
@@ -487,8 +492,9 @@ void sendFileInfo(s32 fStart,s32 fSize,char *fHead, u16 wCliPostInsNo, u16 wSerP
     OspPost(MAKEIID(DEMO_APP_SERVER_NO, wSerPostInsNo), EVENT_FILE_POST2S, m_sendBuffer,
         (strFileMsg.fileSize + 4 + 2*sizeof(s32) + 3*sizeof(u16)), CPublic::g_uNodeNum, MAKEIID(DEMO_APP_CLIENT_NO, wCliPostInsNo));
 }
-
+#endif
 // 处理的server端的回复包，决定下一次的文件发送;
+#if 0
 void OnClientReceive(CMessage *const pMsg)
 {
     OspPrintf(TRUE, FALSE, "Client: Receive the response package\r\n");
@@ -500,8 +506,8 @@ void OnClientReceive(CMessage *const pMsg)
 
     // 解析包数据;
     char cFileHead[4];
-    FILEMESSAGE *strFileMsg;
-    strFileMsg = (FILEMESSAGE*)strMsgGet;
+    TFileMessage *strFileMsg;
+    strFileMsg = (TFileMessage*)strMsgGet;
     cFileHead[0] = strFileMsg->fileHead[0];
     cFileHead[1] = strFileMsg->fileHead[1];                                                                                                                                                                                                                                                                     
     cFileHead[2] = strFileMsg->fileHead[2];
@@ -525,8 +531,10 @@ void OnClientReceive(CMessage *const pMsg)
     delete [] strMsgGet;
     strMsgGet = NULL;
 }
+#endif
 
 // 根据intance ID，找到对应的全局变量索引;
+#if 0
 u16 FindInsIndex(u16 wSerPostInsNo)
 {
     u16 wIndex = 0;
@@ -542,7 +550,7 @@ u16 FindInsIndex(u16 wSerPostInsNo)
 
     return MAX_FILE_POST_INS;
 }
-
+#endif
 // CDemoInstance 类定义及初始化;
 // InstanceEntry:event 消息处理函数定义;
 //////////////////////////////////////////////
@@ -550,18 +558,31 @@ u16 FindInsIndex(u16 wSerPostInsNo)
 // server端申请消息发送的instance回复处理函数;
 void MsgPostInsAllotAck(CMessage *const pMsg)
 {
+    u16 wMsgLen = 0;
+    s8 *pchMsgGet = NULL;
+    TMsgAckInfo *ptMsgAckInfo = NULL;
+
     // 消息内容提取;
-    u16 MsgLen = pMsg->length;
-    char *strMsgGet = new char[MsgLen + 1];
+    wMsgLen = pMsg->length;
 
-    ZeroMemory(strMsgGet, MsgLen + 1);
-    memcpy_s(strMsgGet, MsgLen, pMsg->content, MsgLen);
+    pchMsgGet = new char[wMsgLen + 1];
+    ZeroMemory(pchMsgGet, wMsgLen + 1);
+    memcpy_s(pchMsgGet, wMsgLen, pMsg->content, wMsgLen);
 
-    g_uCliMsgPstInsNum = atoi(strMsgGet);
+    ptMsgAckInfo = (TMsgAckInfo*)pchMsgGet;
+
+    // 消息发送;
+    OspPost(MAKEIID(DEMO_APP_SERVER_NO, ptMsgAckInfo->m_wNodeNo), EVENT_MSG_POST, ptMsgAckInfo->m_achMsg, (wMsgLen - 2*sizeof(u16)),
+        g_wNodeNum, MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO), 0, DEMO_POST_TIMEOUT);
+
+    // 释放空间;
+    delete [] pchMsgGet;
+    pchMsgGet = NULL;
 
 }
 
 // Server端申请文件发送的instance回复处理函数;
+#if 0
 void FilePostInsAllotAck(CMessage *const pMsg)
 {
     // 消息内容提取;
@@ -575,33 +596,32 @@ void FilePostInsAllotAck(CMessage *const pMsg)
     CPublic::m_swTmpNum = atoi(strMsgGet);
 
 }
-
+#endif
 // 消息接收处理函数;
 void MsgPostFunc(CMessage *const pMsg)
 {
+    u16 wMsgLen = 0;
+    s8 *pchMsgGet = NULL;
+
     // 消息内容提取;
-    u16 MsgLen = pMsg->length;
-    char *strMsgGet = new char[MsgLen + 1];
+    wMsgLen = pMsg->length;
 
-    ZeroMemory(strMsgGet, MsgLen + 1);
-    memcpy_s(strMsgGet, MsgLen, pMsg->content, MsgLen);
-    OspPrintf(TRUE, FALSE, "message content is: %s, length is: %d.\n", strMsgGet, pMsg->length);
+    pchMsgGet = new char[wMsgLen + 1];
+    ZeroMemory(pchMsgGet, wMsgLen + 1);
+    memcpy_s(pchMsgGet, wMsgLen, pMsg->content, wMsgLen);
+    OspPrintf(TRUE, FALSE, "message content is: %s, length is: %d.\n", pchMsgGet, wMsgLen);
 
-    // 赋值;
-    USES_CONVERSION;
-    wchar_t *lpMsg = A2W(strMsgGet);
+    // 窗口赋值;
     CEditUI* pEditRecv =  pFrame->m_pEditRecv;
-    pEditRecv->SetText(lpMsg);
-
-    // 获取源结点号;
-    CPublic::g_uNodeNum = pMsg->srcnode;
+    pEditRecv->SetText(CA2W(pchMsgGet));
 
     // 释放空间;
-    delete [] strMsgGet;
-    strMsgGet = NULL;
+    delete [] pchMsgGet;
+    pchMsgGet = NULL;
 }
 
 // 文件信息初始化;
+#if 0
 void FileInfoInit(u16 wIndex)
 {
     // 初始化文件信息内容;
@@ -703,6 +723,7 @@ void FileLenInit(CMessage *const pMsg)
    
     return;
 }
+#endif
 
 void CDemoInstance::InstanceEntry(CMessage *const pMsg)
 {
@@ -717,7 +738,7 @@ void CDemoInstance::InstanceEntry(CMessage *const pMsg)
         NextState(STATE_WORK);
         break;
     case EVENT_FILE_POST_INS_ALLOT_ACK:
-        FilePostInsAllotAck(pMsg);
+        //FilePostInsAllotAck(pMsg);
         NextState(STATE_WORK);
         break;
     case EVENT_MSG_POST:
@@ -726,13 +747,13 @@ void CDemoInstance::InstanceEntry(CMessage *const pMsg)
         //SetTimer(EVENT_TIMEOUT, 1000);
         break;
     case EVENT_FILE_LEN_POST:
-        FileLenInit(pMsg);
+        //FileLenInit(pMsg);
         break;
     case EVENT_FILE_ATR_POST:
-        FileMsgInit(pMsg);
+        //FileMsgInit(pMsg);
         break;
     case EVENT_FILE_POST2C:
-        OnClientReceive(pMsg);
+        //OnClientReceive(pMsg);
         break;
     default:
         
@@ -746,16 +767,16 @@ void CDemoInstance::InstanceEntry(CMessage *const pMsg)
 // DaemonInstanceEntry:event 消息处理函数定义;
 //////////////////////////////////////////////
 
-// 获取空闲的instanceID;
-u16 GetIdleInsID(CApp* pcApp)
+// 获取空闲的instance指针;
+CDemoInstance* GetIdleInsID(CApp* pcApp)
 {
     u16 wIndex = 0;
-    CInstance *pCInst = NULL;
+    CDemoInstance *pCInst = NULL;
 
     // 遍历所有instance，寻找到一个空闲的instance并返回;
     for (wIndex = 1; wIndex <= MAX_INS_NO; wIndex++)
     {
-        pCInst = pcApp->GetInstance(wIndex);
+        pCInst = (CDemoInstance *)pcApp->GetInstance(wIndex);
         if (pCInst->CurState() == IDLE_STATE)
         {
             pCInst->m_curState = STATE_WORK;
@@ -768,67 +789,34 @@ u16 GetIdleInsID(CApp* pcApp)
     if (wIndex > MAX_INS_NO)
     {
         OspPrintf(TRUE, FALSE, "Current have none idle instance.\r\n");
-        return 0;
+        return NULL;
     }
 
-    return wIndex;
-}
-
-// 客户端消息发送instance分配;
-void ClientMsgPostInsAllot(CMessage *const pcMsg, CApp* pcApp)
-{
-    s32 nIndex = 0;
-    TInStatus tInStatus = {0};
-
-    // 判断用于文件传输的instance是否达到限值;
-    if (g_tInsNo.size() == MAX_FILE_POST_INS)
-    {
-        OspPrintf(TRUE, FALSE, "Instances used for file transfer are limited.\r\n");
-        return;
-    }
-
-    tInStatus.uInsNum = GetIdleInsID(pcApp);
-    if (tInStatus.uInsNum == 0)
-    {
-        OspPrintf(TRUE, FALSE, "Client:have none idle instance.\r\n");
-        return;
-    }
-
-    tInStatus.nUsedFlag = 0;
-    OspPrintf(TRUE, FALSE, "Client: Get a idle instance, ID: %d.\r\n", tInStatus.uInsNum);
-
-    g_tInsNo.push_back(tInStatus);
-    return;
+    return pCInst;
 }
 
 // 客户端文件发送instance分配;
 void ClientFilePostInsAllot(CMessage *const pcMsg, CApp* pcApp)
 {
-    s32 nIndex = 0;
-    TInStatus tInStatus = {0};
+    CDemoInstance *pcIns = NULL;
 
-    // 判断用于文件传输的instance是否达到限值;
-    if (g_tInsNo.size() == MAX_FILE_POST_INS)
-    {
-        OspPrintf(TRUE, FALSE, "Instances used for file transfer are limited.\r\n");
-        return;
-    }
+    // 获取空闲的instance指针;
+    pcIns = GetIdleInsID(pcApp);
 
-    tInStatus.uInsNum = GetIdleInsID(pcApp);
-    if (tInStatus.uInsNum == 0)
+    if (pcIns == 0)
     {
         OspPrintf(TRUE, FALSE, "Client:have none idle instance.\r\n");
         return;
     }
 
-    tInStatus.nUsedFlag = 0;
-    OspPrintf(TRUE, FALSE, "Client: Get a idle instance, ID: %d.\r\n", tInStatus.uInsNum);
+    g_pvcFilePstInsNo.push_back(pcIns);
+    OspPrintf(TRUE, FALSE, "Client: Get a idle instance, ID: %d.\r\n", pcIns->m_instId);
 
-    g_tInsNo.push_back(tInStatus);
     return;
 }
 
 // 客户端文件发送instance释放;
+#if 0
 void CliFilePostInsRelease(CMessage *const pcMsg, CApp* pcApp)
 {
 	u16 wInsid = 0;
@@ -859,7 +847,7 @@ void CliFilePostInsRelease(CMessage *const pcMsg, CApp* pcApp)
 	pCInst->m_curState = IDLE_STATE;
 	pCInst->m_lastState = STATE_WORK;
 }
-
+#endif
 void CDemoInstance::DaemonInstanceEntry(CMessage *const pcMsg, CApp* pcApp)
 {
     /*得到当前消息的类型;*/
@@ -867,16 +855,12 @@ void CDemoInstance::DaemonInstanceEntry(CMessage *const pcMsg, CApp* pcApp)
 
     switch (wCurEvent)
     {
-    case EVENT_CLIENT_MSG_POST_INS_ALLOT:
-        ClientMsgPostInsAllot(pcMsg, pcApp);
-        NextState(STATE_WORK);
-        break;
     case EVENT_CLIENT_FILE_POST_INS_ALLOT:
         ClientFilePostInsAllot(pcMsg, pcApp);
         NextState(STATE_WORK);
         break;
 	case EVENT_CLIENT_FILE_POST_INS_RELEASE:
-		CliFilePostInsRelease(pcMsg, pcApp);
+		//CliFilePostInsRelease(pcMsg, pcApp);
 		NextState(STATE_WORK);
 		break;
     default:

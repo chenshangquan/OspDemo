@@ -62,38 +62,61 @@ void CFrameWindowWnd::OnFinalMessage(HWND /*hWnd*/)
 // 发送按钮消息处理;
 void OnBnClickedPost(CEditUI* m_pEditPost)
 {
-    // 发送窗口内容;
-    //char strMsg[MAX_POST_MSG_LEN + 1];
-    //ZeroMemory(strMsg, MAX_POST_MSG_LEN + 1);
-    char *strMsg = CW2A((m_pEditPost->GetText()).GetData());
+    CDuiString cstrMsg = m_pEditPost->GetText();
+    s8 achMsgGet[MAX_POST_MSG_LEN + 1] = {0};
 
     // 获取窗口内容;
-    OspPrintf(TRUE, FALSE, "server start to send a message to client: %s, length = %d\n", strMsg, strlen(strMsg));
-    OspPost(MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO), EVENT_MSG_POST, strMsg, strlen(strMsg), CPublic::g_uNodeNum, MAKEIID(DEMO_APP_SERVER_NO, CPublic::g_uInsNum));
+    ZeroMemory(achMsgGet, MAX_POST_MSG_LEN + 1);
+    memcpy_s(achMsgGet, MAX_POST_MSG_LEN, (CW2A)cstrMsg.GetData(), strlen((CW2A)cstrMsg.GetData()));
 
+    // 客户端分配到一个空闲的instance， 负责消息互传任务;
+    OspPrintf(TRUE, FALSE, "Server start to send a message to client: %s, length = %d\n", achMsgGet, strlen(achMsgGet));
+    OspPost(MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO), EVENT_MSG_POST, achMsgGet, strlen(achMsgGet),
+        g_wNodeNum, MAKEIID(DEMO_APP_SERVER_NO, INS_MSG_POST_NO), 0, DEMO_POST_TIMEOUT);
 }
 
 // 配置按钮消息处理;
 void OnBnClickedConfig()
 {
     u32 dwIpv4Addr = inet_addr("127.0.0.1");
-    u16 wTcpPort = 6682;
-#if 0 //直接本机IP地址;
-    // 获取Ipv4Addr及TcpPort;
-    CEditUI *pEditIPAddr = pFrame->m_pEditIPAddr;
-    CEditUI *pEditPort = pFrame->m_pEditPort;
-    LPCTSTR pStrIPAddr = (pEditIPAddr->GetText()).GetData();
-    LPCTSTR pStrPort = (pEditPort->GetText()).GetData();
+    s8 achHost[MAX_POST_MSG_LEN + 1] = {0};
+    u16 wTcpPort = 0;
+    in_addr tAddr = {0};
+    s32 nIndex = 0;
 
-    if (IsIpFormatRight(pStrIPAddr) != TRUE)
+    // 获取Ipv4Addr及TcpPort;
+#if 0
+    ::gethostname(achHost, MAX_POST_MSG_LEN);
+    hostent *pHost = ::gethostbyname(achHost);
+    /*if (pHost == NULL)
     {
-        ::MessageBox(NULL, _T("INVALID IPADDRESS"), _T("Config Result"), NULL);
+        OspPrintf(TRUE, FALSE, "Get Host Content Failed!!\r\n");
+        return;
+    }*/
+
+    // 获取本机第一个IP地址;
+    for (nIndex = 0;;nIndex++)
+    {
+        s8 *pAddr = pHost->h_addr_list[nIndex];
+        if (pAddr != NULL)
+        {
+            memcpy(&tAddr.S_un.S_addr, pAddr, pHost->h_length);
+            break;
+        }
+    }
+    
+    dwIpv4Addr = inet_addr(::inet_ntoa(tAddr));
+#endif
+    CEditUI *pcEditPort = pFrame->m_pEditPort;
+    if (pcEditPort == NULL)
+    {
+		OspPrintf(TRUE, FALSE, "Get CEditUI Failed!!\r\n");
         return;
     }
-    USES_CONVERSION;
-    u32 uIpv4Addr = inet_addr(W2A(pStrIPAddr));
-    u32 uTcpPort = atoi(W2A(pStrPort));
-#endif
+
+    CDuiString cStrPort = pcEditPort->GetText();
+    wTcpPort = atoi((CW2A)cStrPort.GetData());
+
     // OSP初始化
     OspInit(TRUE, 2510);
     // OSP初始化结果查询
@@ -113,7 +136,6 @@ void OnBnClickedConfig()
     else
     {
         OspPrintf(TRUE, FALSE, "服务器配置结果：SUCCESSFUL!! Socket Number:%d\r\n", sfd);
-        ::MessageBox(NULL, _T("SUCCESSFUL!!"), _T("服务器配置结果"), NULL);
         //创建APP
         s32 nGreateRlt = g_cDemoApp.CreateApp("DemoServer", DEMO_APP_SERVER_NO, DEMO_APP_PRIO, DEMO_APP_QUE_SIZE); //APPID = 1
     }
@@ -122,6 +144,7 @@ void OnBnClickedConfig()
 // 文件存储路径选择;
 void OnBnClickedFilePos()
 {
+#if 0
     TCHAR szFolderPath[MAX_PATH] = {0};
     u16 uPos = 0;
     u16 wIndex = 0;
@@ -170,6 +193,7 @@ void OnBnClickedFilePos()
     {
         CoTaskMemFree(lpidlBrowse);
     }
+#endif
     return;
 }
 

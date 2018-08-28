@@ -4,9 +4,9 @@
   <VerticalLayout bkcolor="#FFC0C0C0">
 	<HorizontalLayout height="60">
 		<VerticalLayout>
-			<Edit name="EditIPAddr" text="X.X.X.X" width="160"  height="25"/>
+			<Edit name="EditIPAddr" text="127.0.0.1" bkcolor="FFFFFFFF" width="160"  height="25"/>
 			<HorizontalLayout height="30">
-				<Edit name="EditPort" text="PORT" width="80"  height="25"/>
+				<Edit name="EditPort" text="6682" bkcolor="FFFFFFFF" width="80"  height="25"/>
 				<Button name="ConnectButton" text="连接按钮" width="80" height="25" />
 				<Button name="DisCntButton"  text="断连按钮" width="80" height="25" />
 			</HorizontalLayout>
@@ -14,10 +14,10 @@
 		</VerticalLayout>
 	</HorizontalLayout>
 	
-	<HorizontalLayout height="150">
+	<HorizontalLayout height="200">
 		<VerticalLayout>
 			<HorizontalLayout height="30">
-				<Edit name="EditFileSel" text="" width="160" height="25" />
+				<Edit name="EditFileSel" text="" bkcolor="FFFFFFFF" width="160" height="25" />
 				<Button name="FileSelButton" text="文件选择" maxwidth="80" height="25" />
 			</HorizontalLayout>
 			
@@ -28,7 +28,7 @@
 				<HorizontalLayout />
 			</HorizontalLayout>
 			<!--Progress name="ProgressDemo1" text="Progress" width="200" height="20" foreimage="OspDemoSkins\progress_fore.png" min="0" max="100" value="0" hor="true" align="center" /-->
-			<List name="LoadList" height="90" bkcolor="#FFFFFFFF" itemtextcolor="#FF000000" itembkcolor="#FFE2DDDF" itemselectedtextcolor="#FF000000" itemselectedbkcolor="#FFC1E3FF" itemhottextcolor="#FF000000" itemhotbkcolor="#FFE9F5FF" itemdisabledtextcolor="#FFCCCCCC" itemdisabledbkcolor="#FFFFFFFF" >
+			<List name="LoadList" height="140" bkcolor="#FFFFFFFF" itemtextcolor="#FF000000" itembkcolor="#FFE2DDDF" itemselectedtextcolor="#FF000000" itemselectedbkcolor="#FFC1E3FF" itemhottextcolor="#FF000000" itemhotbkcolor="#FFE9F5FF" itemdisabledtextcolor="#FFCCCCCC" itemdisabledbkcolor="#FFFFFFFF" >
                 <ListHeader name="LoadListHeader" height="20" bkimage="List/list_header_bg.png">
                     <ListHeaderItem text="文件名称" width="250" height="20" minwidth="250" maxwidth="340" sepwidth="1" align="center" hotimage="List/list_header_hot.png" pushedimage="List/list_header_pushed.png" sepimage="List/list_header_sep.png" />
 					<ListHeaderItem text="操作" width="50" height="20" minwidth="50" maxwidth="50" sepwidth="1" align="center" hotimage="List/list_header_hot.png" pushedimage="List/list_header_pushed.png" sepimage="List/list_header_sep.png" />

@@ -40,7 +40,7 @@ enum FILE_PACKET_TYPE
 };
 
 // 包的结构体;
-struct FILEMESSAGE
+struct TFileMessage
 {
     // 标志作用;
     char fileHead[4];
@@ -259,7 +259,7 @@ void CreateFileBuff(CMessage *const pMsg)
 void sendFileInfo(int fStart,int fSize,char *fHead)
 {
     UINT nFilePacketBuff = MAX_FILE_PACKET - 4 - 2*sizeof(int);
-    FILEMESSAGE strFileMsg;
+    TFileMessage strFileMsg;
     // 定义用于发送文件数据的文件包，fileHead定义为“FFF”;
     strFileMsg.fileHead[0] = 'F';
     strFileMsg.fileHead[1] = 'F';
@@ -406,8 +406,8 @@ void OnClientReceive(CMessage *const pMsg)
 
     // 解析包数据;
     char cFileHead[4];
-    FILEMESSAGE *strFileMsg;
-    strFileMsg = (FILEMESSAGE*)strMsgGet;
+    TFileMessage *strFileMsg;
+    strFileMsg = (TFileMessage*)strMsgGet;
     cFileHead[0] = strFileMsg->fileHead[0];
     cFileHead[1] = strFileMsg->fileHead[1];                                                                                                                                                                                                                                                                     
     cFileHead[2] = strFileMsg->fileHead[2];
@@ -427,7 +427,7 @@ void OnClientReceive(CMessage *const pMsg)
 //bool StoreFilePacket();                    //保存接收到的文件包;
 //bool IsFilePacket();                       //判断并保证文件包完整;
 
-bool StoreFilePacket(FILEMESSAGE *strFileMsgGet)
+bool StoreFilePacket(TFileMessage *strFileMsgGet)
 {
     m_fileInfo.fileStart = strFileMsgGet->fileStart;
     m_fileInfo.fileSize = strFileMsgGet->fileSize;
@@ -457,7 +457,7 @@ bool StoreFilePacket(FILEMESSAGE *strFileMsgGet)
 
 void SendFilePacketEcho(int nFlag)    //向Client发送确认包，m_fileMsgSend是CMySocket的变量;
 {
-    FILEMESSAGE strFileMsgAck = {0};
+    TFileMessage strFileMsgAck = {0};
     if(nFlag == FILE_PACKET_OK)
     {
         strFileMsgAck.fileHead[0] = 'O';
@@ -515,7 +515,7 @@ void SendFilePacketEcho(int nFlag)    //向Client发送确认包，m_fileMsgSend是CMySo
 #endif
 }
 
-void ReceiveFilePacket(FILEMESSAGE *strFileMsgGet)
+void ReceiveFilePacket(TFileMessage *strFileMsgGet)
 {
     //int RecFilePkgSize = strFileMsgGet->fileSize;
     m_fileInfo.filePacketIndex++;
@@ -561,7 +561,7 @@ void OnServerReceive(CMessage *const pMsg)
     ZeroMemory(strMsgGet, MsgLen + 1);
     memcpy_s(strMsgGet, MsgLen, pMsg->content, MsgLen);
 
-    FILEMESSAGE *strFileMsgGet = (FILEMESSAGE *)strMsgGet;
+    TFileMessage *strFileMsgGet = (TFileMessage *)strMsgGet;
 
     // 正常接受包，做接受处理工作，并回复一个确认报告诉client继续发送下一个包;
     if (!strncmp(strFileMsgGet->fileHead, "FFF", 3))

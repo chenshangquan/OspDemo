@@ -5,8 +5,9 @@
 	<HorizontalLayout height="50">
 		<VerticalLayout>
 			<HorizontalLayout>
-				<Button name="ConfigButton" text="配置按钮" height="25" maxwidth="80" />
-				<Button name="DisCntButton" text="断连按钮" height="25" maxwidth="80" />
+				<Edit name="EditPort" text="6682" width="80" height="25" />
+				<Button name="ConfigButton" text="配置按钮" width="80" height="25" />
+				<Button name="DisCntButton" text="断连按钮" width="80" height="25" />
 			</HorizontalLayout>
 			<HorizontalLayout />
 		</VerticalLayout>
