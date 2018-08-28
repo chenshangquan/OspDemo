@@ -29,7 +29,8 @@ CFrameWindowWnd* pFrame = NULL;
 enum EM_EVENT_TYPE
 {
     EVENT_MSG_POST_INS_ALLOT_ACK = 1,
-    EVENT_FILE_POST_INS_ALLOT_ACK,
+    //EVENT_FILE_POST_INS_ALLOT_ACK,
+	EVENT_SERVER_FILE_POST_INS_ALLOT_ACK,
     EVENT_MSG_POST,
     EVENT_FILE_ATR_POST,
     EVENT_FILE_POST2C,
@@ -213,26 +214,8 @@ typedef zTemplate<CDemoInstance, MAX_INS_NO> CDemoApp;
 CDemoApp g_cDemoApp;
 
 // 临时全局变量;
-#if 0
-typedef struct tagInStatus
-{
-    u16 uInsNum;
-    s32 nUsedFlag;
-    s32 nLastStart;
-    s32 nLastSize;
-    s32 nPktIndex;
-    s64 dnProgValve;
-    s32 nErrorIndex;
-	TCHAR strFilePath[MAX_PATH];
-	s32 m_nPuase;			// 文件停止发送标志;
-	s32 m_nCancel;			// 文件取消发送标志;
-    TFileInfo m_tFileInfo;
-}TInStatus;
-vector<TInStatus> g_tInsNo;
-#endif
+vector<CDemoInstance*> g_pvcFilePstInsNo;
 
-CDemoInstance g_cMsgPstInsNo;
-vector<CDemoInstance> g_cFilePstInsNo;
 //vector<u16> g_wNodeNum;
 u16 g_wNodeNum;
 
@@ -977,15 +960,15 @@ void CDemoInstance::InstanceEntry(CMessage *const pMsg)
 //////////////////////////////////////////////
 
 // 获取空闲的instanceID;
-u16 GetIdleInsID(CApp* pcApp)
+CDemoInstance* GetIdleInsID(CApp* pcApp)
 {
     u16 wIndex = 0;
-    CInstance *pCInst = NULL;
+    CDemoInstance *pCInst = NULL;
 
     // 遍历所有instance，寻找到第一个空闲的instance并返回;
     for (wIndex = 1; wIndex <= MAX_INS_NO; wIndex++)
     {
-        pCInst = pcApp->GetInstance(wIndex);
+        pCInst = (CDemoInstance*)pcApp->GetInstance(wIndex);
         if (pCInst->CurState() == IDLE_STATE)
         {
             pCInst->m_curState = STATE_WORK;
@@ -1001,7 +984,7 @@ u16 GetIdleInsID(CApp* pcApp)
         return 0;
     }
 
-    return wIndex;
+    return pCInst;
 }
 
 // 服务端消息发送, instance分配;
@@ -1033,42 +1016,43 @@ void ServerMsgPostInsAllot(CMessage *const pcMsg, CApp* pcApp)
 }
 #endif
 // 服务端文件发送instance分配;
-#if 0
 void ServerFilePostInsAllot(CMessage *const pcMsg, CApp* pcApp)
 {
-    s32 nIndex = 0;
-    TInStatus tInStatus = {0};
-    s8 achInsNo[MAX_INS_STR_NO] = {0};
+	u16 wMsgLen = 0;
+	s8 *pchMsgGet = NULL;
+	
+	// 消息内容提取;
+	wMsgLen = pcMsg->length;
+	pchMsgGet = new char[wMsgLen + 1];
+	ZeroMemory(pchMsgGet, wMsgLen + 1);
+	memcpy_s(pchMsgGet, wMsgLen, pcMsg->content, wMsgLen);
+	//OspPrintf(TRUE, FALSE, "message content is: %s, length is: %d.\n", pchMsgGet, wMsgLen);
 
-    // 判断用于文件传输的instance是否达到限值;
-    if (g_tInsNo.size() == MAX_FILE_POST_INS)
-    {
-        OspPrintf(TRUE, FALSE, "Instances used for file transfer are limited.\r\n");
-        return;
-    }
+	// 获取空闲的instance指针;
+	CDemoInstance *pcIns = GetIdleInsID(pcApp);
+	if (pcIns == 0)
+	{
+		OspPrintf(TRUE, FALSE, "Server:have none idle instance.\r\n");
+		return;
+	}
 
-    tInStatus.uInsNum = GetIdleInsID(pcApp);
-    if (tInStatus.uInsNum == 0)
-    {
-        OspPrintf(TRUE, FALSE, "Client:have none idle instance.\r\n");
-        return;
-    }
+	TFileInfo *tFileInfo = (TFileInfo *)pchMsgGet;
 
-    tInStatus.nUsedFlag = 0;
-    OspPrintf(TRUE, FALSE, "Client: Get a idle instance, ID: %d.\r\n", tInStatus.uInsNum);
+	// 数据获取;
+	pcIns->m_tFileInfo.fileLength = tFileInfo->fileLength;
+	pcIns->m_tFileInfo.filePacketNum = tFileInfo->filePacketNum;
+	ZeroMemory(pcIns->m_tFileInfo.strFileName, MAX_FILE_NAME + 1);
+	memcpy_s(pcIns->m_tFileInfo.strFileName, MAX_FILE_NAME, tFileInfo->strFileName, (wMsgLen - 8));
 
-    g_tInsNo.push_back(tInStatus);
+	g_pvcFilePstInsNo.push_back(pcIns);
 
-    ZeroMemory(achInsNo, MAX_INS_STR_NO);
-    sprintf(achInsNo, "%d", tInStatus.uInsNum);
-
-    // 回复服务端申请到的空闲instance，并发送给客户端;
-    s32 nPostRet = OspPost(MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO),
-        EVENT_FILE_POST_INS_ALLOT_ACK, achInsNo, strlen(achInsNo), CPublic::g_uNodeNum);
+	// Instance申请消息回复;
+	OspPost(pcMsg->srcid, EVENT_SERVER_FILE_POST_INS_ALLOT_ACK,
+		NULL, 0, g_wNodeNum, MAKEIID(DEMO_APP_SERVER_NO, pcIns->m_instId), 0, DEMO_POST_TIMEOUT);
 
     return;
 }
-#endif
+
 // 服务端文件发送instance释放;
 #if 0
 void SerFilePostInsRelease(CMessage *const pcMsg, CApp* pcApp)
@@ -1116,7 +1100,7 @@ void CDemoInstance::DaemonInstanceEntry(CMessage *const pcMsg, CApp* pcApp)
         NextState(STATE_WORK);
         break;
     case EVENT_SERVER_FILE_POST_INS_ALLOT:
-        //ServerFilePostInsAllot(pcMsg, pcApp);
+        ServerFilePostInsAllot(pcMsg, pcApp);
         NextState(STATE_WORK);
         break;
 	case EVENT_SERVER_FILE_POST_INS_RELEASE:

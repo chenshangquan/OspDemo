@@ -36,7 +36,8 @@ enum EM_USED_FLAG
 enum EM_EVENT_TYPE
 {
     EVENT_MSG_POST_INS_ALLOT_ACK = 1,
-    EVENT_FILE_POST_INS_ALLOT_ACK,
+    //EVENT_FILE_POST_INS_ALLOT_ACK,
+	EVENT_SERVER_FILE_POST_INS_ALLOT_ACK,
     EVENT_MSG_POST,
     EVENT_FILE_ATR_POST,
     EVENT_FILE_POST2C,
@@ -54,6 +55,7 @@ enum EM_DAEM_EVENT_TYPE
     EVENT_SERVER_MSG_POST_INS_ALLOT,
     EVENT_CLIENT_FILE_POST_INS_ALLOT,
     EVENT_SERVER_FILE_POST_INS_ALLOT,
+	//EVENT_SERVER_FILE_POST_INS_ALLOT_ACK,
     EVENT_CLIENT_FILE_POST_INS_RELEASE,
     EVENT_SERVER_FILE_POST_INS_RELEASE,
 
@@ -105,24 +107,9 @@ typedef struct tagFileMessage
 // 文件信息结构体;
 typedef struct tagFileInfo
 {
-    // 文件分包数;
-    int filePacketNum;
-    // 包的索引，即为第几个包;
-    int filePacketIndex;
-    // 实际用于传输文件数据的大小;
-    int nFilePacketBuff;
-    // 当前包的偏移位置;
-    int fileStart;
-    // 当前包的大小;
-    int fileSize;
-    // 上一次包的偏移位置;
-    int lastStart;
-    // 上一次包的大小;
-    int lastSize;
-    // 文件总长度;
-    u32 fileLength;
-    // 文件名称;
-    char strFileName[MAX_FILE_NAME + 1];
+    s32 filePacketNum;						// 文件分包数;			
+    u32 fileLength;							// 文件总长度;
+    s8 strFileName[MAX_FILE_NAME + 1];	    // 文件名称;
 }TFileInfo;
 
 // 记录文件传输过程中的相关信息;
@@ -309,53 +296,6 @@ void sendFileInfo(s32 fStart,s32 fSize,char *fHead, u16 wCliPostInsNo, u16 wSerP
             // 传输出错标志、包索引置0;
             g_tInsNo[wIndex].nErrorIndex = 0;
             g_tInsNo[wIndex].nPktIndex   = 0;
-
-			// 绘图;
-			pcLoadList->RemoveAll();    // 清除重绘;
-			for (wListIndex = 0; wListIndex < g_tInsNo.size(); wListIndex++)
-			{
-				CDemoListContainerElementUI* pcListContainer = new CDemoListContainerElementUI;
-				pcListContainer->m_pHeader = pFrame->m_pListHeader;
-				CProgressUI* pcProgress = new CProgressUI;
-				CHorizontalLayoutUI* pcHorizontalLayout = new CHorizontalLayoutUI;
-				CButtonUI* pcButtonStp = new CButtonUI;
-				CButtonUI* pcButtonCcl = new CButtonUI;
-
-				pcListContainer->ApplyAttributeList(_T("height=\"25\" align=\"right\""));
-
-				// 进度条控件添加;
-				USES_CONVERSION;
-				pcProgress->ApplyAttributeList(_T("width=\"200\" height=\"20\" foreimage=\"OspDemoSkins\\progress_fore.png\"\
-												  min=\"0\" max=\"100\" hor=\"true\" align=\"center\""));
-				pcProgress->SetName(A2W(achPrgName));
-				ZeroMemory(achProgress, MAX_FILE_NAME);
-				sprintf(achProgress, "%s(%ld%%)", g_tInsNo[wListIndex].m_tFileInfo.strFileName, g_tInsNo[wListIndex].dnProgValve);
-				pcProgress->SetValue((int)g_tInsNo[wListIndex].dnProgValve);
-				pcProgress->SetText(A2W(achProgress));
-				pcListContainer->Add(pcProgress);
-
-				//pcHorizontalLayout->ApplyAttributeList(_T(""));
-
-				// 暂停按键控件添加;
-				ZeroMemory(achBtnName, MAX_STR_LEN);
-				sprintf(achBtnName, "FileStpButton%u", wListIndex);
-				pcButtonStp->ApplyAttributeList(_T("text=\"S\" width=\"25\" height=\"20\""));
-				pcButtonStp->SetName(A2W(achBtnName));
-				pcHorizontalLayout->Add(pcButtonStp);
-
-				// 取消按键控件添加;
-				pcButtonCcl->ApplyAttributeList(_T("name=\"FileStpButton\" text=\"C\" width=\"25\" height=\"20\""));
-				pcHorizontalLayout->Add(pcButtonCcl);
-
-				pcListContainer->Add(pcHorizontalLayout);
-				pcLoadList->Add(pcListContainer);
-
-				//delete pcListContainer;
-				//delete pcProgress;
-				//delete pcHorizontalLayout;
-				//delete pcButtonStp;
-				//delete pcButtonCcl;
-			}
 
             // 考虑只有一个包的情况;
             if (g_tInsNo[wIndex].m_tFileInfo.fileLength <= nFilePacketBuff)
@@ -581,6 +521,33 @@ void MsgPostInsAllotAck(CMessage *const pMsg)
 
 }
 
+// 申请服务端分配文件发送instance回复;
+void ClientFilePostInsAllotAck(CMessage *const pMsg)
+{
+	u16 wVecIndex = 0;
+	u16 wCliPostInsNo = 0;
+	u16 wSerPostInsNo = 0;
+
+	wCliPostInsNo = GETINS(pMsg->dstid);
+	wSerPostInsNo = GETINS(pMsg->srcid);
+
+	for (wVecIndex = 0; wVecIndex < g_pvcFilePstInsNo.size(); wVecIndex++)
+	{
+		if (g_pvcFilePstInsNo[wVecIndex]->m_instId == wCliPostInsNo)
+		{
+			break;
+		}
+	}
+
+	if (wVecIndex == g_pvcFilePstInsNo.size())
+	{
+		return;
+	}
+	// 发送第一个包;
+	//sendFileInfo(0, 0, "0", wCliPostInsNo, wSerPostInsNo, wVecIndex);
+	return;
+}
+
 // Server端申请文件发送的instance回复处理函数;
 #if 0
 void FilePostInsAllotAck(CMessage *const pMsg)
@@ -737,10 +704,9 @@ void CDemoInstance::InstanceEntry(CMessage *const pMsg)
         MsgPostInsAllotAck(pMsg);
         NextState(STATE_WORK);
         break;
-    case EVENT_FILE_POST_INS_ALLOT_ACK:
-        //FilePostInsAllotAck(pMsg);
-        NextState(STATE_WORK);
-        break;
+	case EVENT_SERVER_FILE_POST_INS_ALLOT_ACK:
+		ClientFilePostInsAllotAck(pMsg);
+		break;
     case EVENT_MSG_POST:
         MsgPostFunc(pMsg);
         NextState(STATE_WORK);
@@ -798,19 +764,105 @@ CDemoInstance* GetIdleInsID(CApp* pcApp)
 // 客户端文件发送instance分配;
 void ClientFilePostInsAllot(CMessage *const pcMsg, CApp* pcApp)
 {
-    CDemoInstance *pcIns = NULL;
+	u16 wMsgLen = 0;
+	s8 *pchMsgGet = NULL;
+
+	// 消息内容提取;
+	wMsgLen = pcMsg->length;
+	pchMsgGet = new char[wMsgLen + 1];
+	ZeroMemory(pchMsgGet, wMsgLen + 1);
+	memcpy_s(pchMsgGet, wMsgLen, pcMsg->content, wMsgLen);
+	//OspPrintf(TRUE, FALSE, "message content is: %s, length is: %d.\n", pchMsgGet, wMsgLen);
 
     // 获取空闲的instance指针;
-    pcIns = GetIdleInsID(pcApp);
-
+    CDemoInstance *pcIns = GetIdleInsID(pcApp);
     if (pcIns == 0)
     {
         OspPrintf(TRUE, FALSE, "Client:have none idle instance.\r\n");
         return;
     }
 
+	TFileInfo *tFileInfo = (TFileInfo *)pchMsgGet;
+
+	// 数据获取;
+	pcIns->m_tFileInfo.fileLength = tFileInfo->fileLength;
+	pcIns->m_tFileInfo.filePacketNum = tFileInfo->filePacketNum;
+	ZeroMemory(pcIns->m_tFileInfo.strFileName, MAX_FILE_NAME + 1);
+	memcpy_s(pcIns->m_tFileInfo.strFileName, MAX_FILE_NAME, tFileInfo->strFileName, (wMsgLen - 8));
+	
     g_pvcFilePstInsNo.push_back(pcIns);
-    OspPrintf(TRUE, FALSE, "Client: Get a idle instance, ID: %d.\r\n", pcIns->m_instId);
+    OspPrintf(TRUE, FALSE, "Client: Get a idle instance, ID: %d, FileName : %s.\r\n", pcIns->m_instId, pcIns->m_tFileInfo.strFileName);
+
+	// 绘图;
+	u16 wListIndex = 0;
+	s8 achProgress[MAX_FILE_NAME] = {0};
+	s8 achBtnName[MAX_STR_LEN]  = {0};
+	s8 achPrgName[MAX_STR_LEN]  = {0};
+	s8 achTmpName[MAX_FILE_NAME]  = {0};
+	CListUI* pcLoadList = pFrame->m_pList;
+	if (pcLoadList == NULL)
+	{
+		return;
+	}
+	pcLoadList->RemoveAll();    // 清除重绘;
+	for (wListIndex = 0; wListIndex < g_pvcFilePstInsNo.size(); wListIndex++)
+	{
+		CDemoListContainerElementUI* pcListContainer = new CDemoListContainerElementUI;
+		pcListContainer->m_pHeader = pFrame->m_pListHeader;
+		CProgressUI* pcProgress = new CProgressUI;
+		CHorizontalLayoutUI* pcHorizontalLayout = new CHorizontalLayoutUI;
+		CButtonUI* pcButtonStt = new CButtonUI;
+		CButtonUI* pcButtonStp = new CButtonUI;
+		//CButtonUI* pcButtonCcl = new CButtonUI;
+
+		pcListContainer->ApplyAttributeList(_T("height=\"25\" align=\"right\""));
+
+		// 进度条控件添加;
+		ZeroMemory(achPrgName, MAX_STR_LEN);
+		sprintf(achPrgName, "DemoProgress%u", wListIndex);
+		USES_CONVERSION;
+		pcProgress->ApplyAttributeList(_T("width=\"200\" height=\"20\" foreimage=\"OspDemoSkins\\progress_fore.png\"\
+										  min=\"0\" max=\"100\" hor=\"true\" align=\"center\""));
+		pcProgress->SetName(A2W(achPrgName));
+		ZeroMemory(achProgress, MAX_FILE_NAME);
+		sprintf(achProgress, "%s(%ld%%)", g_pvcFilePstInsNo[wListIndex]->m_tFileInfo.strFileName, 0);
+		pcProgress->SetValue(0);
+		pcProgress->SetText(A2W(achProgress));
+		pcListContainer->Add(pcProgress);
+
+		//pcHorizontalLayout->ApplyAttributeList(_T(""));
+
+		// 开始按键控件添加;
+		ZeroMemory(achBtnName, MAX_STR_LEN);
+		sprintf(achBtnName, "FileSttButton%u", wListIndex);
+		pcButtonStt->ApplyAttributeList(_T("text=\"S\" width=\"25\" height=\"20\""));
+		pcButtonStt->SetName(A2W(achBtnName));
+		pcHorizontalLayout->Add(pcButtonStt);
+
+		// 暂停按键控件添加;
+		ZeroMemory(achBtnName, MAX_STR_LEN);
+		sprintf(achBtnName, "FileStpButton%u", wListIndex);
+		pcButtonStp->ApplyAttributeList(_T("text=\"P\" width=\"25\" height=\"20\""));
+		pcButtonStp->SetName(A2W(achBtnName));
+		pcHorizontalLayout->Add(pcButtonStp);
+
+		// 取消按键控件添加;
+		//pcButtonCcl->ApplyAttributeList(_T("name=\"FileStpButton\" text=\"C\" width=\"25\" height=\"20\""));
+		//pcHorizontalLayout->Add(pcButtonCcl);
+
+		pcListContainer->Add(pcHorizontalLayout);
+		pcLoadList->Add(pcListContainer);
+
+		//delete pcListContainer;
+		//delete pcProgress;
+		//delete pcHorizontalLayout;
+		//delete pcButtonStp;
+		//delete pcButtonCcl;
+	}
+
+	// 释放空间;
+	delete [] pchMsgGet;
+	pchMsgGet = NULL;
 
     return;
 }

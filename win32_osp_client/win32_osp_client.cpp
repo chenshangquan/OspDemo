@@ -158,6 +158,8 @@ void OnBnClickedFileSel()
     s8 achBuff[MAX_PATH + 1] = {0};
     BROWSEINFO bi = {0};
     //u16 uPos = 0;
+	TFileInfo tFileInfo = {0};
+	s8 achFileInfo[MAX_POST_MSG_LEN] = {0};
 
     bi.hwndOwner = NULL;  
     bi.iImage    = 0;  
@@ -199,40 +201,27 @@ void OnBnClickedFileSel()
         // 输出文件名;
         OspPrintf(TRUE, FALSE, "Get FileName: %s\r\n", (CW2A)g_strFileName);
 
+		// 文件信息收集;
+		HANDLE mFileR = CreateFile(g_strFilePath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		if (mFileR == INVALID_HANDLE_VALUE)
+		{
+			OspPrintf(TRUE, FALSE, "Client: CreateFile fail!\r\n");
+			return;
+		}
+
+		// 获取文件大小和分包数;
+		DWORD dwHigh = 0;
+		DWORD dwSize = GetFileSize(mFileR, &dwHigh);
+		//__int64 nFileSize = ((__int64)dwHigh << 32) + dwSize;//对于大文件需要将高32位和低32位拼接成64位整形;
+		//g_pvcFilePstInsNo[]
+		tFileInfo.fileLength = dwSize;
+		tFileInfo.filePacketNum = dwSize/(MAX_FILE_PACKET - 4 - 2*sizeof(s32)- 3*sizeof(u16)) + 1;
+		ZeroMemory(tFileInfo.strFileName, MAX_FILE_NAME + 1);
+		memcpy_s(tFileInfo.strFileName, MAX_FILE_NAME, (CW2A)g_strFileName, wcslen(g_strFileName));
+
         // 让客户端分配一个空闲的instance，用于处理文件发送流程;
-        OspPost(MAKEIID(DEMO_APP_CLIENT_NO, CInstance::DAEMON), EVENT_CLIENT_FILE_POST_INS_ALLOT, NULL, 0,
-            0, MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO), 0, DEMO_POST_TIMEOUT);
-
-        // 绘图; --TODO // 列表增加增加一行信息;
-        for (wIndex = 0; wIndex < g_pvcFilePstInsNo.size(); wIndex++)
-        {
-            if (!wcscmp(g_pvcFilePstInsNo[wIndex]->m_strFilePath, g_strFileName))
-            {
-                return;
-            }
-        }
-
-        // 文件发送信息收集;
-
-        HANDLE mFileR = CreateFile(g_strFilePath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-        if (mFileR == INVALID_HANDLE_VALUE)
-        {
-            OspPrintf(TRUE, FALSE, "Client: CreateFile fail!\r\n");
-            return;
-        }
-        // 获取文件大小和分包数;
-        DWORD dwHigh = 0;
-        DWORD dwSize = GetFileSize(mFileR, &dwHigh);
-        //__int64 nFileSize = ((__int64)dwHigh << 32) + dwSize;//对于大文件需要将高32位和低32位拼接成64位整形
-        g_pvcFilePstInsNo[g_pvcFilePstInsNo.size() - 1]->m_tFileInfo.fileLength = dwHigh;
-        g_tInsNo[wIndex].m_tFileInfo.filePacketNum = g_tInsNo[wIndex].m_tFileInfo.fileLength/(MAX_FILE_PACKET - 4 - 2*sizeof(s32)- 3*sizeof(u16)) + 1;
-
-        // 发送基本文件信息到server端，及文件名、文件大小;
-        ZeroMemory(g_tInsNo[wIndex].m_tFileInfo.strFileName, MAX_FILE_NAME + 1);
-        memcpy_s(g_tInsNo[wIndex].m_tFileInfo.strFileName, MAX_FILE_NAME, Buff, strlen(Buff));
-
-        OspPrintf(TRUE, FALSE, "Start to send fileInfo, name is : %s, length : %d\n",
-            g_tInsNo[wIndex].m_tFileInfo.strFileName, g_tInsNo[wIndex].m_tFileInfo.fileLength);
+		OspPost(MAKEIID(DEMO_APP_CLIENT_NO, CInstance::DAEMON), EVENT_CLIENT_FILE_POST_INS_ALLOT, &tFileInfo,
+			(strlen(tFileInfo.strFileName)+ 8), 0, MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO), 0, DEMO_POST_TIMEOUT);
 
     }
 #if 0
@@ -357,6 +346,24 @@ void OnBnClickedFilePst()
     return;
 }
 
+// 文件开始传输;
+void OnBnClickedFileStt(u16 wIndex)
+{
+	u16 wLength = 0;
+	TFileInfo tFileInfo = {0};
+	tFileInfo.fileLength =  g_pvcFilePstInsNo[wIndex]->m_tFileInfo.fileLength;
+	tFileInfo.filePacketNum =  g_pvcFilePstInsNo[wIndex]->m_tFileInfo.filePacketNum;
+	ZeroMemory(tFileInfo.strFileName, MAX_FILE_NAME + 1);
+	wLength = strlen(g_pvcFilePstInsNo[wIndex]->m_tFileInfo.strFileName);
+	memcpy_s(tFileInfo.strFileName, MAX_FILE_NAME, g_pvcFilePstInsNo[wIndex]->m_tFileInfo.strFileName, wLength);
+	
+	// 让服务端分配一个空闲的instance，用于处理文件接收流程;
+	OspPost(MAKEIID(DEMO_APP_SERVER_NO, CInstance::DAEMON), EVENT_SERVER_FILE_POST_INS_ALLOT,
+		&tFileInfo, wLength + 8, g_wNodeNum, MAKEIID(DEMO_APP_CLIENT_NO,  g_pvcFilePstInsNo[wIndex]->m_instId), 0, DEMO_POST_TIMEOUT);
+
+	return;
+}
+
 // 文件暂停传输;
 void OnBnClickedFileStp(u16 wIndex)
 {
@@ -406,15 +413,42 @@ void CFrameWindowWnd::Notify(TNotifyUI& msg)
         {
             OnBnClickedFileSel();
         }
+
         // 文件发送按键;
         if (msg.pSender->GetName() == _T("FilePstButton"))
         {
             OnBnClickedFilePst();
         }
+		// 文件发送停止按键;
+		if (msg.pSender->GetName() == _T("FileSttButton"))
+		{
+			OnBnClickedFileStt(MAX_INS_NO + 1);
+		}
+		if (msg.pSender->GetName() == _T("FileSttButton0"))
+		{
+			OnBnClickedFileStt(0);
+		}
+		if (msg.pSender->GetName() == _T("FileSttButton1"))
+		{
+			OnBnClickedFileStt(1);
+		}
+		if (msg.pSender->GetName() == _T("FileSttButton2"))
+		{
+			OnBnClickedFileStt(2);
+		}
+		if (msg.pSender->GetName() == _T("FileSttButton3"))
+		{
+			OnBnClickedFileStt(3);
+		}
+		if (msg.pSender->GetName() == _T("FileSttButton4"))
+		{
+			OnBnClickedFileStt(4);
+		}
+
         // 文件发送停止按键;
         if (msg.pSender->GetName() == _T("FileStpButton"))
         {
-            OnBnClickedFileStp(MAX_FILE_POST_INS);
+            OnBnClickedFileStp(MAX_INS_NO + 1);
         }
 		if (msg.pSender->GetName() == _T("FileStpButton0"))
 		{
