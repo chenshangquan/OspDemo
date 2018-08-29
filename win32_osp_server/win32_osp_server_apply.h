@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../include/w32ospdemo_com.h"
+#include "../include/ospdemo_com.h"
 
 #define MAX_INS_NO 20
 

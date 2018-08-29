@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../include/w32ospdemo_com.h"
+#include "../include/ospdemo_com.h"
 
 #define MAX_INS_NO 10
 
@@ -23,16 +23,13 @@ void SendFileInfo(s32 fStart,s32 fSize,char *fHead, u16 wCliPostInsNo, u16 wSerP
     //s8 achBtnName[MAX_STR_LEN]  = {0};
     s8 achPrgName[MAX_STR_LEN]  = {0};
     //s8 achTmpName[MAX_FILE_NAME]  = {0};
-    CDuiString strListTag;
     BYTE m_sendBuffer[MAX_FILE_PACKET + 1] = {0};   // 待传送数据buffer;
 
     ZeroMemory(achPrgName, MAX_STR_LEN);
     sprintf(achPrgName, "DemoProgress%u", wIndex);
+
     // 文件传输进度数值;
     g_pvcFilePstInsNo[wIndex]->m_dnProgValve = 100 * g_pvcFilePstInsNo[wIndex]->m_nPktIndex / g_pvcFilePstInsNo[wIndex]->m_tFileInfo.filePacketNum;
-
-    // 获取列表窗口指针;
-    //CListUI* pcLoadList = pFrame->m_pList;
 
     u32 dwFilePacketBuff = MAX_FILE_PACKET - 4 - 2*sizeof(s32) - 3*sizeof(u16);
 
@@ -80,6 +77,10 @@ void SendFileInfo(s32 fStart,s32 fSize,char *fHead, u16 wCliPostInsNo, u16 wSerP
 
             pcLoadList->RemoveAt(wIndex);
 #endif
+			// 传送完毕时，给自己发送消息并进行进度条的绘制;
+			OspPost(MAKEIID(DEMO_APP_CLIENT_NO, CInstance::DAEMON), EVENT_LAST_PROGRESS_UI_PAINT, NULL,
+				0, 0, MAKEIID(DEMO_APP_CLIENT_NO, wCliPostInsNo), 0, DEMO_POST_TIMEOUT);
+
             return;
         }
         // 发送第一个包;
@@ -106,11 +107,15 @@ void SendFileInfo(s32 fStart,s32 fSize,char *fHead, u16 wCliPostInsNo, u16 wSerP
                 g_pvcFilePstInsNo[wIndex]->m_nLastSize  = dwFilePacketBuff;
                 OspPrintf(TRUE, FALSE, "First packet. Index(%d)\r\n", g_pvcFilePstInsNo[wIndex]->m_nPktIndex);
             }
+
+			// 发送第一个包时，给自己发送消息并进行进度条的绘制;
+			OspPost(MAKEIID(DEMO_APP_CLIENT_NO, CInstance::DAEMON), EVENT_FIRST_PROGRESS_UI_PAINT, NULL,
+				0, 0, MAKEIID(DEMO_APP_CLIENT_NO, wCliPostInsNo), 0, DEMO_POST_TIMEOUT);
         }
         // 接收到server端回复的正常确认包;
         else if (!strcmp(fHead,"OK!"))
         {
-#if 1  // 需更改逻辑，发送消息实现绘图;
+#if 0  // 需更改逻辑，发送消息实现绘图;
 
             USES_CONVERSION;
             CProgressUI* pcPrg = static_cast<CProgressUI*>(pFrame->m_pm.FindControl(A2W(achPrgName)));
@@ -147,6 +152,10 @@ void SendFileInfo(s32 fStart,s32 fSize,char *fHead, u16 wCliPostInsNo, u16 wSerP
                 g_pvcFilePstInsNo[wIndex]->m_nLastSize  = strFileMsg.fileSize;
                 OspPrintf(TRUE, FALSE, "Next packet. Index(%d)\r\n",  g_pvcFilePstInsNo[wIndex]->m_nPktIndex);
             }
+
+			// 后续正常包传送时，给自己发送消息并进行进度条的绘制;
+			OspPost(MAKEIID(DEMO_APP_CLIENT_NO, CInstance::DAEMON), EVENT_NORMAL_PROGRESS_UI_PAINT, NULL,
+				0, 0, MAKEIID(DEMO_APP_CLIENT_NO, wCliPostInsNo), 0, DEMO_POST_TIMEOUT);
         }
         // 确认包表示接收到的包有错误，则重新发送上一个包;
         else if (!strcmp(fHead, "ERR"))   
@@ -406,11 +415,10 @@ CDemoInstance* GetIdleInsID(CApp* pcApp)
 void ClientFilePostInsAllot(CMessage *const pcMsg, CApp* pcApp)
 {
 	u16 wMsgLen = 0;
-	s8 *pchMsgGet = NULL;
 
 	// 消息内容提取;
 	wMsgLen = pcMsg->length;
-	pchMsgGet = new char[wMsgLen + 1];
+	s8 *pchMsgGet = new char[wMsgLen + 1];
 	ZeroMemory(pchMsgGet, wMsgLen + 1);
 	memcpy_s(pchMsgGet, wMsgLen, pcMsg->content, wMsgLen);
 	//OspPrintf(TRUE, FALSE, "message content is: %s, length is: %d.\n", pchMsgGet, wMsgLen);
@@ -438,72 +446,9 @@ void ClientFilePostInsAllot(CMessage *const pcMsg, CApp* pcApp)
     g_pvcFilePstInsNo.push_back(pcIns);
     OspPrintf(TRUE, FALSE, "Client: Get a idle instance, ID: %d, FileName: %s\r\n", pcIns->m_instId, pcIns->m_tFileInfo.strFileName);
 
-	// 绘图;
-	u16 wListIndex = 0;
-	s8 achProgress[MAX_FILE_NAME] = {0};
-	s8 achBtnName[MAX_STR_LEN]  = {0};
-	s8 achPrgName[MAX_STR_LEN]  = {0};
-	s8 achTmpName[MAX_FILE_NAME]  = {0};
-	CListUI* pcLoadList = pFrame->m_pList;
-	if (pcLoadList == NULL)
-	{
-		return;
-	}
-	pcLoadList->RemoveAll();    // 清除重绘;
-	for (wListIndex = 0; wListIndex < g_pvcFilePstInsNo.size(); wListIndex++)
-	{
-		CDemoListContainerElementUI* pcListContainer = new CDemoListContainerElementUI;
-		pcListContainer->m_pHeader = pFrame->m_pListHeader;
-		CProgressUI* pcProgress = new CProgressUI;
-		CHorizontalLayoutUI* pcHorizontalLayout = new CHorizontalLayoutUI;
-		CButtonUI* pcButtonStt = new CButtonUI;
-		CButtonUI* pcButtonStp = new CButtonUI;
-		//CButtonUI* pcButtonCcl = new CButtonUI;
-
-		pcListContainer->ApplyAttributeList(_T("height=\"25\" align=\"right\""));
-
-		// 进度条控件添加;
-		ZeroMemory(achPrgName, MAX_STR_LEN);
-		sprintf(achPrgName, "DemoProgress%u", wListIndex);
-		USES_CONVERSION;
-		pcProgress->ApplyAttributeList(_T("width=\"200\" height=\"20\" foreimage=\"OspDemoSkins\\progress_fore.png\"\
-										  min=\"0\" max=\"100\" hor=\"true\" align=\"center\""));
-		pcProgress->SetName(A2W(achPrgName));
-		ZeroMemory(achProgress, MAX_FILE_NAME);
-		sprintf(achProgress, "%s(%ld%%)", g_pvcFilePstInsNo[wListIndex]->m_tFileInfo.strFileName, 0);
-		pcProgress->SetValue(0);
-		pcProgress->SetText(A2W(achProgress));
-		pcListContainer->Add(pcProgress);
-
-		//pcHorizontalLayout->ApplyAttributeList(_T(""));
-
-		// 开始按键控件添加;
-		ZeroMemory(achBtnName, MAX_STR_LEN);
-		sprintf(achBtnName, "FileSttButton%u", wListIndex);
-		pcButtonStt->ApplyAttributeList(_T("text=\"S\" width=\"25\" height=\"20\""));
-		pcButtonStt->SetName(A2W(achBtnName));
-		pcHorizontalLayout->Add(pcButtonStt);
-
-		// 暂停按键控件添加;
-		ZeroMemory(achBtnName, MAX_STR_LEN);
-		sprintf(achBtnName, "FileStpButton%u", wListIndex);
-		pcButtonStp->ApplyAttributeList(_T("text=\"P\" width=\"25\" height=\"20\""));
-		pcButtonStp->SetName(A2W(achBtnName));
-		pcHorizontalLayout->Add(pcButtonStp);
-
-		// 取消按键控件添加;
-		//pcButtonCcl->ApplyAttributeList(_T("name=\"FileStpButton\" text=\"C\" width=\"25\" height=\"20\""));
-		//pcHorizontalLayout->Add(pcButtonCcl);
-
-		pcListContainer->Add(pcHorizontalLayout);
-		pcLoadList->Add(pcListContainer);
-
-		//delete pcListContainer;
-		//delete pcProgress;
-		//delete pcHorizontalLayout;
-		//delete pcButtonStp;
-		//delete pcButtonCcl;
-	}
+	// 文件信息获取后，给自己发送消息并进行列表图形绘制;
+	OspPost(MAKEIID(DEMO_APP_CLIENT_NO, CInstance::DAEMON), EVENT_LIST_UI_PAINT, NULL,
+		0, 0, MAKEIID(DEMO_APP_CLIENT_NO, pcIns->m_instId), 0, DEMO_POST_TIMEOUT);
 
 	// 释放空间;
 	delete [] pchMsgGet;
@@ -546,6 +491,199 @@ void CliFilePostInsRelease(CMessage *const pcMsg, CApp* pcApp)
 }
 #endif
 
+u16 FindIndexByInsNo(u16 wInsNo)
+{
+	u16 wIndex = 0;
+	// 寻找Insid对应的索引;
+	for (wIndex = 0; wIndex < g_pvcFilePstInsNo.size(); wIndex++)
+	{
+		if (g_pvcFilePstInsNo[wIndex]->m_instId == wInsNo)
+		{
+			break;
+		}
+	}
+
+	// 获取索引失败;
+	if (wIndex == g_pvcFilePstInsNo.size())
+	{
+		OspPrintf(TRUE, FALSE, "Find Index Failed.\r\n");
+		return MAX_INS_NO;
+	}
+
+	return wIndex;
+}
+
+// 列表信息绘制;
+void ListUI2Paint()
+{
+	// 绘图;
+	u16 wListIndex = 0;
+	s8 achProgress[MAX_FILE_NAME] = {0};
+	s8 achBtnName[MAX_STR_LEN]  = {0};
+	s8 achPrgName[MAX_STR_LEN]  = {0};
+	//s8 achTmpName[MAX_FILE_NAME]  = {0};
+	CListUI* pcLoadList = pFrame->m_pList;
+	if (pcLoadList == NULL)
+	{
+		return;
+	}
+
+	pcLoadList->RemoveAll();    // 清除重绘;
+	for (wListIndex = 0; wListIndex < g_pvcFilePstInsNo.size(); wListIndex++)
+	{
+		CDemoListContainerElementUI* pcListContainer = new CDemoListContainerElementUI;
+		pcListContainer->m_pHeader = pFrame->m_pListHeader;
+		CProgressUI* pcProgress = new CProgressUI;
+		CHorizontalLayoutUI* pcHorizontalLayout = new CHorizontalLayoutUI;
+		CButtonUI* pcButtonStt = new CButtonUI;
+		CButtonUI* pcButtonStp = new CButtonUI;
+		CButtonUI* pcButtonCcl = new CButtonUI;
+
+		pcListContainer->ApplyAttributeList(_T("height=\"25\" align=\"right\""));
+
+		// 进度条控件添加;
+		ZeroMemory(achPrgName, MAX_STR_LEN);
+		sprintf(achPrgName, "DemoProgress%u", g_pvcFilePstInsNo[wListIndex]->m_instId);
+		USES_CONVERSION;
+		pcProgress->ApplyAttributeList(_T("width=\"200\" height=\"20\" foreimage=\"OspDemoSkins\\progress_fore.png\"\
+										  min=\"0\" max=\"100\" hor=\"true\" align=\"center\""));
+		pcProgress->SetName(A2W(achPrgName));
+		ZeroMemory(achProgress, MAX_FILE_NAME);
+		sprintf(achProgress, "%s(%ld%%)", g_pvcFilePstInsNo[wListIndex]->m_tFileInfo.strFileName, 0);
+		pcProgress->SetValue(0);
+		pcProgress->SetText(A2W(achProgress));
+		pcListContainer->Add(pcProgress);
+
+		//pcHorizontalLayout->ApplyAttributeList(_T(""));
+
+		// 开始按键控件添加;
+		ZeroMemory(achBtnName, MAX_STR_LEN);
+		sprintf(achBtnName, "FileSttButton%u", g_pvcFilePstInsNo[wListIndex]->m_instId);
+		pcButtonStt->ApplyAttributeList(_T("text=\"S\" width=\"17\" height=\"20\""));
+		pcButtonStt->SetName(A2W(achBtnName));
+		pcHorizontalLayout->Add(pcButtonStt);
+
+		// 暂停按键控件添加;
+		ZeroMemory(achBtnName, MAX_STR_LEN);
+		sprintf(achBtnName, "FileStpButton%u", g_pvcFilePstInsNo[wListIndex]->m_instId);
+		pcButtonStp->ApplyAttributeList(_T("text=\"P\" width=\"17\" height=\"20\""));
+		pcButtonStp->SetName(A2W(achBtnName));
+		pcHorizontalLayout->Add(pcButtonStp);
+
+		// 取消按键控件添加;
+		ZeroMemory(achBtnName, MAX_STR_LEN);
+		sprintf(achBtnName, "FileCclButton%u", g_pvcFilePstInsNo[wListIndex]->m_instId);
+		pcButtonCcl->ApplyAttributeList(_T("text=\"C\" width=\"16\" height=\"20\""));
+		pcButtonCcl->SetName(A2W(achBtnName));
+		pcHorizontalLayout->Add(pcButtonCcl);
+
+		pcListContainer->Add(pcHorizontalLayout);
+		pcLoadList->Add(pcListContainer);
+
+	}
+	return;
+}
+
+// 第一包图形绘制;
+void FirstProgressUI2Paint(CMessage *const pcMsg)
+{
+	u16 wInsNo = GETINS(pcMsg->srcid);
+	u16 wIndex = 0;
+	s8 achProgress[MAX_FILE_NAME] = {0};
+	s8 achPrgName[MAX_STR_LEN]  = {0};
+
+	wIndex = FindIndexByInsNo(wInsNo);
+	if (wIndex == MAX_INS_NO)
+	{
+		OspPrintf(TRUE, FALSE, "Index Error.\r\n");
+		return;
+	}
+	
+	sprintf(achPrgName, "DemoProgress%u", wInsNo);
+
+
+	return;
+}
+
+// 后续正常包绘制;
+void NormalProgressUI2Paint(CMessage *const pcMsg)
+{
+	u16 wInsNo = GETINS(pcMsg->srcid);
+	u16 wIndex = 0;
+	s8 achProgress[MAX_FILE_NAME] = {0};
+	s8 achPrgName[MAX_STR_LEN]  = {0};
+
+	wIndex = FindIndexByInsNo(wInsNo);
+	if (wIndex == MAX_INS_NO)
+	{
+		OspPrintf(TRUE, FALSE, "Index Error.\r\n");
+		return;
+	}
+
+	sprintf(achPrgName, "DemoProgress%u", wInsNo);
+
+	USES_CONVERSION;
+	CProgressUI* pcPrg = static_cast<CProgressUI*>(pFrame->m_pm.FindControl(A2W(achPrgName)));
+	if (pcPrg == NULL)
+	{
+		OspPrintf(TRUE, FALSE, "Can't find the progress control\r\n");
+	}
+
+	// 进度条赋值;
+	ZeroMemory(achProgress, MAX_FILE_NAME);
+	sprintf(achProgress, "%s(%ld%%)", g_pvcFilePstInsNo[wIndex]->m_tFileInfo.strFileName, g_pvcFilePstInsNo[wIndex]->m_dnProgValve);
+	pcPrg->SetValue((s32)g_pvcFilePstInsNo[wIndex]->m_dnProgValve);
+	pcPrg->SetText(A2W(achProgress));
+	
+	return;
+}
+
+// 传送完毕列表信息绘制;
+void LastProgressUI2Paint(CMessage *const pcMsg)
+{
+	u16 wInsNo = GETINS(pcMsg->srcid);
+	u16 wIndex = 0;
+	s8 achProgress[MAX_FILE_NAME] = {0};
+	s8 achPrgName[MAX_STR_LEN]  = {0};
+	s8 achBtnNameA[MAX_STR_LEN]  = {0};
+	s8 achBtnNameB[MAX_STR_LEN]  = {0};
+
+	wIndex = FindIndexByInsNo(wInsNo);
+	if (wIndex == MAX_INS_NO)
+	{
+		OspPrintf(TRUE, FALSE, "Index Error.\r\n");
+		return;
+	}
+
+	sprintf(achPrgName, "DemoProgress%u", wInsNo);
+	sprintf(achBtnNameA, "DemoProgress%u", wInsNo);
+	sprintf(achBtnNameB, "FileCclButton%u", wInsNo);
+
+	USES_CONVERSION;
+	CProgressUI* pcPrg = static_cast<CProgressUI*>(pFrame->m_pm.FindControl(A2W(achPrgName)));
+	if (pcPrg == NULL)
+	{
+		OspPrintf(TRUE, FALSE, "Can't find the progress control\r\n");
+	}
+
+	// 进度条赋值;
+	ZeroMemory(achProgress, MAX_FILE_NAME);
+	sprintf(achProgress, "%s(%ld%%)", g_pvcFilePstInsNo[wIndex]->m_tFileInfo.strFileName, 100);
+	pcPrg->SetValue(100);
+	pcPrg->SetText(A2W(achProgress));
+
+	// 删除指定控件;
+	CListUI* pcLoadList = pFrame->m_pList;
+	if (pcLoadList == NULL)
+	{
+		return;
+	}
+
+	CButtonUI* pcBtnCcl = static_cast<CButtonUI*>(pFrame->m_pm.FindControl(A2W(achBtnNameB)));
+	pcLoadList->Remove(pcBtnCcl);
+	return;
+}
+
 // DaemonInstanceEntry消息分发处理入口;
 void CDemoInstance::DaemonInstanceEntry(CMessage *const pcMsg, CApp* pcApp)
 {
@@ -562,6 +700,21 @@ void CDemoInstance::DaemonInstanceEntry(CMessage *const pcMsg, CApp* pcApp)
 		//CliFilePostInsRelease(pcMsg, pcApp);
 		NextState(STATE_WORK);
 		break;
+	case EVENT_LIST_UI_PAINT:
+		ListUI2Paint();
+	case EVENT_FIRST_PROGRESS_UI_PAINT:
+		FirstProgressUI2Paint(pcMsg);
+		NextState(STATE_WORK);
+		break;
+	case EVENT_NORMAL_PROGRESS_UI_PAINT:
+		NormalProgressUI2Paint(pcMsg);
+		NextState(STATE_WORK);
+		break;
+	case EVENT_LAST_PROGRESS_UI_PAINT:
+		LastProgressUI2Paint(pcMsg);
+		NextState(STATE_WORK);
+		break;
+
     default:
         // Def_Fuction(pMsg);
         break;

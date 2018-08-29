@@ -27,7 +27,12 @@ enum EM_EVENT_TYPE
     EVENT_SERVER_FILE_POST_INS_ALLOT_ACK,       // 服务端文件发送实例申请回复事件;
     EVENT_FILE_POST2C,                          // 客户端文件包接收响应事件;
     EVENT_FILE_POST2S,                          // 服务端文件包接收响应事件;
-    EVENT_TIMEOUT,
+
+	// 文件传输进度绘图;
+	EVENT_LIST_UI_PAINT,						// 列表信息绘制;
+	EVENT_FIRST_PROGRESS_UI_PAINT,				// 第一个包的进度条绘制;
+    EVENT_NORMAL_PROGRESS_UI_PAINT,				// 后续正常包的进度条绘制;
+	EVENT_LAST_PROGRESS_UI_PAINT,				// 传送完毕的进度条绘制;
 
     EVENT_NONE
 };
@@ -159,6 +164,6 @@ public:
 CFrameWindowWnd* pFrame = NULL;
 TCHAR g_strFilePath[MAX_PATH] = _T("");
 TCHAR g_strFileName[MAX_FILE_NAME] = _T("");
-TCHAR g_strFolderPath[MAX_PATH] = _T("F:\\2");
+TCHAR g_strFolderPath[MAX_PATH] = _T("E:\\2");
 vector<CDemoInstance*> g_pvcFilePstInsNo;
 u16 g_wNodeNum;

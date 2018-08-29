@@ -4,7 +4,7 @@
 
 #include "stdafx.h"
 #include "win32_osp_server.h"
-#include "win32_osp_server_com.h"
+#include "win32_osp_server_apply.h"
 #include <Shlobj.h>
 #include <shlwapi.h>
 
