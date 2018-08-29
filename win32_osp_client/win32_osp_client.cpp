@@ -8,6 +8,10 @@
 #include <Shlobj.h>
 #include <shlwapi.h>
 
+// typedef zTemplate<CDemoInstance, 20, CDemoAppData, 20> CDemoApp;
+typedef zTemplate<CDemoInstance, MAX_INS_NO> CDemoApp;
+CDemoApp g_cDemoApp;
+
 //主程序中要引用atlbase.h 和 tchar.h;
 CFrameWindowWnd::CFrameWindowWnd(void)
 {
@@ -191,7 +195,7 @@ void OnBnClickedFileSel()
         pcEditFileSel->SetText(szBuf);
 
         ZeroMemory(achBuff, MAX_PATH + 1);
-        memcpy_s(achBuff, MAX_PATH, (CW2A)szBuf, wcslen(szBuf));
+        memcpy_s(achBuff, MAX_PATH, (CW2A)szBuf, strlen((CW2A)(szBuf)));
         OspPrintf(TRUE, FALSE, "Get FilePath: %s\r\n", achBuff);
 
         // 获取文件名称;
@@ -212,16 +216,17 @@ void OnBnClickedFileSel()
 		// 获取文件大小和分包数;
 		DWORD dwHigh = 0;
 		DWORD dwSize = GetFileSize(mFileR, &dwHigh);
+        CloseHandle(mFileR);
 		//__int64 nFileSize = ((__int64)dwHigh << 32) + dwSize;//对于大文件需要将高32位和低32位拼接成64位整形;
 		//g_pvcFilePstInsNo[]
 		tFileInfo.fileLength = dwSize;
 		tFileInfo.filePacketNum = dwSize/(MAX_FILE_PACKET - 4 - 2*sizeof(s32)- 3*sizeof(u16)) + 1;
 		ZeroMemory(tFileInfo.strFileName, MAX_FILE_NAME + 1);
-		memcpy_s(tFileInfo.strFileName, MAX_FILE_NAME, (CW2A)g_strFileName, wcslen(g_strFileName));
+		memcpy_s(tFileInfo.strFileName, MAX_FILE_NAME, (CW2A)g_strFileName, strlen((CW2A)g_strFileName));
 
         // 让客户端分配一个空闲的instance，用于处理文件发送流程;
 		OspPost(MAKEIID(DEMO_APP_CLIENT_NO, CInstance::DAEMON), EVENT_CLIENT_FILE_POST_INS_ALLOT, &tFileInfo,
-			(strlen(tFileInfo.strFileName)+ 8), 0, MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO), 0, DEMO_POST_TIMEOUT);
+			(strlen(tFileInfo.strFileName)+ 2*sizeof(u32)), 0, MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO), 0, DEMO_POST_TIMEOUT);
 
     }
 #if 0
@@ -359,7 +364,7 @@ void OnBnClickedFileStt(u16 wIndex)
 	
 	// 让服务端分配一个空闲的instance，用于处理文件接收流程;
 	OspPost(MAKEIID(DEMO_APP_SERVER_NO, CInstance::DAEMON), EVENT_SERVER_FILE_POST_INS_ALLOT,
-		&tFileInfo, wLength + 8, g_wNodeNum, MAKEIID(DEMO_APP_CLIENT_NO,  g_pvcFilePstInsNo[wIndex]->m_instId), 0, DEMO_POST_TIMEOUT);
+		&tFileInfo, wLength + 2*sizeof(u32), g_wNodeNum, MAKEIID(DEMO_APP_CLIENT_NO,  g_pvcFilePstInsNo[wIndex]->m_instId), 0, DEMO_POST_TIMEOUT);
 
 	return;
 }
@@ -367,17 +372,16 @@ void OnBnClickedFileStt(u16 wIndex)
 // 文件暂停传输;
 void OnBnClickedFileStp(u16 wIndex)
 {
-#if 0
     OspPrintf(TRUE, FALSE, "SuspendThread.\r\n\r\n\r\n");
-	if (wIndex == MAX_FILE_POST_INS)
+	if (wIndex == MAX_INS_NO + 1)
 	{
 		// 暂停所有;
 		return;
 	}
 
-	g_tInsNo[wIndex].m_nPuase = !g_tInsNo[wIndex].m_nPuase;
+	g_pvcFilePstInsNo[wIndex]->m_nPuase = !g_pvcFilePstInsNo[wIndex]->m_nPuase;
     Sleep(1);
-#endif
+
     return;
 }
 
@@ -419,7 +423,7 @@ void CFrameWindowWnd::Notify(TNotifyUI& msg)
         {
             OnBnClickedFilePst();
         }
-		// 文件发送停止按键;
+		// 文件发送开始按键;
 		if (msg.pSender->GetName() == _T("FileSttButton"))
 		{
 			OnBnClickedFileStt(MAX_INS_NO + 1);

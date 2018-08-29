@@ -8,6 +8,9 @@
 #include <Shlobj.h>
 #include <shlwapi.h>
 
+typedef zTemplate<CDemoInstance, MAX_INS_NO> CDemoApp;
+CDemoApp g_cDemoApp;
+
 //主程序中要引用atlbase.h 和 tchar.h;
 CFrameWindowWnd::CFrameWindowWnd(void)
 {
