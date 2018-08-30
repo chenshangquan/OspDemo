@@ -3,6 +3,7 @@
 #include "../include/ospdemo_com.h"
 
 #define MAX_INS_NO 10
+vector<CDemoInstance*> g_pvcFilePstInsNo;
 
 /****************************************************
  *
@@ -58,25 +59,7 @@ void SendFileInfo(s32 fStart,s32 fSize,char *fHead, u16 wCliPostInsNo, u16 wSerP
         if (!strcmp(fHead, "END"))
         {
             OspPrintf(TRUE, FALSE, "Enter END.\r\n");
-#if 0
-            //进度条置顶，完成文件传输;
-            pProgress->SetValue(100);
-            pProgress->SetText(L"Progress(100%)");
 
-            // 文件校验并显示结果; --TODO
-            ::MessageBox(NULL, _T("已完成文件传输！文件检验OK!!"), _T("文件传输结果"), NULL);
-            USES_CONVERSION;
-            // 获取控件进度条指针;
-            pcPrg = static_cast<CProgressUI*>(pFrame->m_pm.FindControl(A2W(achPrgName)));
-
-            // 进度条赋值;
-            ZeroMemory(achProgress, MAX_FILE_NAME);
-            sprintf(achProgress, "%s(%d%%)", g_tInsNo[wIndex].m_tFileInfo.strFileName, 100);
-            pcPrg->SetValue(100);
-            pcPrg->SetText(A2W(achProgress));
-
-            pcLoadList->RemoveAt(wIndex);
-#endif
 			// 传送完毕时，给自己发送消息并进行进度条的绘制;
 			OspPost(MAKEIID(DEMO_APP_CLIENT_NO, CInstance::DAEMON), EVENT_LAST_PROGRESS_UI_PAINT, NULL,
 				0, 0, MAKEIID(DEMO_APP_CLIENT_NO, wCliPostInsNo), 0, DEMO_POST_TIMEOUT);
@@ -115,20 +98,6 @@ void SendFileInfo(s32 fStart,s32 fSize,char *fHead, u16 wCliPostInsNo, u16 wSerP
         // 接收到server端回复的正常确认包;
         else if (!strcmp(fHead,"OK!"))
         {
-#if 0  // 需更改逻辑，发送消息实现绘图;
-
-            USES_CONVERSION;
-            CProgressUI* pcPrg = static_cast<CProgressUI*>(pFrame->m_pm.FindControl(A2W(achPrgName)));
-            if (pcPrg != NULL)
-            {
-                OspPrintf(TRUE, FALSE, "Can't find the progress control\r\n");
-                // 进度条赋值;
-                ZeroMemory(achProgress, MAX_FILE_NAME);
-                sprintf(achProgress, "%s(%ld%%)", g_pvcFilePstInsNo[wIndex]->m_tFileInfo.strFileName, g_pvcFilePstInsNo[wIndex]->m_dnProgValve);
-                pcPrg->SetValue((s32)g_pvcFilePstInsNo[wIndex]->m_dnProgValve);
-                pcPrg->SetText(A2W(achProgress));
-            }
-#endif
             // 传输出错标志置0;
             g_pvcFilePstInsNo[wIndex]->m_nErrorPktNum = 0;
             // 包索引进行累加;
@@ -168,7 +137,8 @@ void SendFileInfo(s32 fStart,s32 fSize,char *fHead, u16 wCliPostInsNo, u16 wSerP
         // 确认包表示用户取消了文件传输;
         else if (!strcmp(fHead, "CCL"))
         {
-            string temp=("");
+            OspPrintf(TRUE, FALSE, "Cancel the packet send.\r\n\r\n\r\n");
+            g_pvcFilePstInsNo[wIndex]->m_nErrorPktNum = 100;
             //GetDlgItemText(IDC_EDIT_CLIENT,temp);
             //temp += _T("\r\n");
             //temp += _T("对方取消了文件传输");
@@ -178,7 +148,7 @@ void SendFileInfo(s32 fStart,s32 fSize,char *fHead, u16 wCliPostInsNo, u16 wSerP
         // 暂停包表示用户停止文件传送;
         else if (!strcmp(fHead, "STP"))
         {
-            OspPrintf(TRUE, FALSE, "stop the packet send.\r\n\r\n\r\n");
+            OspPrintf(TRUE, FALSE, "Stop the packet send.\r\n\r\n\r\n");
             Sleep(1);
         }
         // 接收到的信息不正常时默认出错，重新发送上一个包;
@@ -206,6 +176,11 @@ void SendFileInfo(s32 fStart,s32 fSize,char *fHead, u16 wCliPostInsNo, u16 wSerP
         strFileMsg.fileHead[1] = 'R';
         strFileMsg.fileHead[2] = 'R';
         strFileMsg.fileHead[3] = '\0';
+    }
+
+    if (g_pvcFilePstInsNo[wIndex]->m_nCancel)
+    {
+        return;
     }
 
     ZeroMemory(m_sendBuffer, sizeof(BYTE)*(MAX_FILE_PACKET) + 1);
@@ -442,6 +417,20 @@ void ClientFilePostInsAllot(CMessage *const pcMsg, CApp* pcApp)
     // 文件读取路径信息处理;
     ZeroMemory(pcIns->m_strFilePath, MAX_PATH);
     lstrcpy(pcIns->m_strFilePath, g_strFilePath);
+
+    // 其余成员信息初始化;
+    pcIns->m_nLastStart = 0;
+    pcIns->m_nLastSize = 0;
+    pcIns->m_nPktIndex = 0;
+    pcIns->m_dnProgValve = 0;
+    pcIns->m_nErrorPktNum = 0;
+
+    pcIns->m_nStart = 0;
+    pcIns->m_nPuase = 0;
+    pcIns->m_nCancel = 0;
+
+    // 按钮无效;
+    pFrame->m_pBtnFilePost->SetName(_T("FilePstButton"));
     
     g_pvcFilePstInsNo.push_back(pcIns);
     OspPrintf(TRUE, FALSE, "Client: Get a idle instance, ID: %d, FileName: %s\r\n", pcIns->m_instId, pcIns->m_tFileInfo.strFileName);
@@ -458,12 +447,11 @@ void ClientFilePostInsAllot(CMessage *const pcMsg, CApp* pcApp)
 }
 
 // 客户端文件发送instance释放;
-#if 0
 void CliFilePostInsRelease(CMessage *const pcMsg, CApp* pcApp)
 {
 	u16 wInsid = 0;
 	u16 wIndex = 0;
-	CInstance *pCInst = NULL;
+	
 
 	// 获取收到的消息内容;
 	u16 wMsgLen = pcMsg->length;
@@ -474,22 +462,21 @@ void CliFilePostInsRelease(CMessage *const pcMsg, CApp* pcApp)
 	wInsid = atoi(pchMsgGet);
 
     // 释放全局变量;
-    vector<TInStatus>::iterator itIndex;
-    for (itIndex = g_tInsNo.begin(); itIndex != g_tInsNo.end(); itIndex++)
+    vector< CDemoInstance* >::iterator itIndex;
+    for (itIndex = g_pvcFilePstInsNo.begin(); itIndex != g_pvcFilePstInsNo.end(); itIndex++)
     {
-        if (itIndex->uInsNum == wInsid)
+        if ((*itIndex)->GetInsID() == wInsid)
         {
-            g_tInsNo.erase(itIndex);
+            //g_pvcFilePstInsNo.erase(itIndex);
             break;
         }
     }
 
 	// 释放instance资源;
-	pCInst = pcApp->GetInstance(wInsid);
+	CInstance *pCInst = pcApp->GetInstance(wInsid);
 	pCInst->m_curState = IDLE_STATE;
 	pCInst->m_lastState = STATE_WORK;
 }
-#endif
 
 u16 FindIndexByInsNo(u16 wInsNo)
 {
@@ -559,21 +546,21 @@ void ListUI2Paint()
 		// 开始按键控件添加;
 		ZeroMemory(achBtnName, MAX_STR_LEN);
 		sprintf(achBtnName, "FileSttButton%u", g_pvcFilePstInsNo[wListIndex]->m_instId);
-		pcButtonStt->ApplyAttributeList(_T("text=\"S\" width=\"17\" height=\"20\""));
+		pcButtonStt->ApplyAttributeList(_T("width=\"20\" height=\"20\" normalimage=\"file=\'OspDemoSkins\\start.png\'\" pushedimage=\"file=\'OspDemoSkins\\start2.png\'\""));
 		pcButtonStt->SetName(A2W(achBtnName));
 		pcHorizontalLayout->Add(pcButtonStt);
 
 		// 暂停按键控件添加;
 		ZeroMemory(achBtnName, MAX_STR_LEN);
 		sprintf(achBtnName, "FileStpButton%u", g_pvcFilePstInsNo[wListIndex]->m_instId);
-		pcButtonStp->ApplyAttributeList(_T("text=\"P\" width=\"17\" height=\"20\""));
+		pcButtonStp->ApplyAttributeList(_T("width=\"20\" height=\"20\" normalimage=\"file=\'OspDemoSkins\\pause.png\'\" pushedimage=\"file=\'OspDemoSkins\\pause2.png\'\""));
 		pcButtonStp->SetName(A2W(achBtnName));
 		pcHorizontalLayout->Add(pcButtonStp);
 
 		// 取消按键控件添加;
 		ZeroMemory(achBtnName, MAX_STR_LEN);
 		sprintf(achBtnName, "FileCclButton%u", g_pvcFilePstInsNo[wListIndex]->m_instId);
-		pcButtonCcl->ApplyAttributeList(_T("text=\"C\" width=\"16\" height=\"20\""));
+		pcButtonCcl->ApplyAttributeList(_T("width=\"20\" height=\"20\" normalimage=\"file=\'OspDemoSkins\\del.png\'\" pushedimage=\"file=\'OspDemoSkins\\del.png\'\""));
 		pcButtonCcl->SetName(A2W(achBtnName));
 		pcHorizontalLayout->Add(pcButtonCcl);
 
@@ -697,7 +684,7 @@ void CDemoInstance::DaemonInstanceEntry(CMessage *const pcMsg, CApp* pcApp)
         NextState(STATE_WORK);
         break;
 	case EVENT_CLIENT_FILE_POST_INS_RELEASE:
-		//CliFilePostInsRelease(pcMsg, pcApp);
+		CliFilePostInsRelease(pcMsg, pcApp);
 		NextState(STATE_WORK);
 		break;
 	case EVENT_LIST_UI_PAINT:

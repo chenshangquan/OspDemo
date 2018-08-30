@@ -1,53 +1,52 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Window mininfo="300,400" size="400,600">
+<Window mininfo="300,400" size="500,700">
   <Font name="幼圆" size="16" default="true" />
   <VerticalLayout bkcolor="#FFC0C0C0">
-	<HorizontalLayout height="60">
+	<HorizontalLayout height="80">
 		<VerticalLayout>
-			<Edit name="EditIPAddr" text="127.0.0.1" bkcolor="FFFFFFFF" width="160"  height="25"/>
-			<HorizontalLayout height="30">
-				<Edit name="EditPort" text="6682" bkcolor="FFFFFFFF" width="80"  height="25"/>
-				<Button name="ConnectButton" text="连接按钮" width="80" height="25" />
-				<Button name="DisCntButton"  text="断连按钮" width="80" height="25" />
+			<Edit name="EditIPAddr" text="127.0.0.1" bkcolor="FFF0F8FF" width="160"  height="25"/>
+			<HorizontalLayout height="25">
+				<Edit name="EditPort" text="6682" bkcolor="FFF0F8FF" width="80" height="25"/>
+				<Button name="ConnectButton" text="连接按钮" normalimage="OspDemoSkins\button_normal.png" hotimage="OspDemoSkins\button_hover.png" pushedimage="OspDemoSkins\button_pushed.png" width="80" height="25" />
+				<Button name="DisCntButton"  text="断连按钮" normalimage="OspDemoSkins\button_normal.png" hotimage="OspDemoSkins\button_hover.png" pushedimage="OspDemoSkins\button_pushed.png" width="80" height="25" />
 			</HorizontalLayout>
 			<HorizontalLayout />
 		</VerticalLayout>
 	</HorizontalLayout>
 	
-	<HorizontalLayout height="200">
+	<HorizontalLayout height="220">
 		<VerticalLayout>
 			<HorizontalLayout height="30">
 				<Edit name="EditFileSel" text="" bkcolor="FFFFFFFF" width="160" height="25" />
-				<Button name="FileSelButton" text="文件选择" maxwidth="80" height="25" />
+				<Button name="FileSelButton" text="文件选择" normalimage="OspDemoSkins\button_normal.png" hotimage="OspDemoSkins\button_hover.png" pushedimage="OspDemoSkins\button_pushed.png" maxwidth="80" height="25" />
 			</HorizontalLayout>
 			
 			<HorizontalLayout height="30">
-				<Button name="FilePstButton" text="发送文件" width="80" height="25" />
-				<Button name="FileStpButton" text="暂停发送" width="80" height="25" />
-				<Button name="FileCclButton" text="取消发送" width="80" height="25" />
+				<Button name="FilePstButton" text="发送文件" normalimage="OspDemoSkins\button_normal.png" hotimage="OspDemoSkins\button_hover.png" pushedimage="OspDemoSkins\button_pushed.png" width="80" height="25" />
+				<Button name="FileStpButton" text="暂停发送" normalimage="OspDemoSkins\button_normal.png" hotimage="OspDemoSkins\button_hover.png" pushedimage="OspDemoSkins\button_pushed.png" width="80" height="25" />
+				<Button name="FileCclButton" text="取消发送" normalimage="OspDemoSkins\button_normal.png" hotimage="OspDemoSkins\button_hover.png" pushedimage="OspDemoSkins\button_pushed.png" width="80" height="25" />
 				<HorizontalLayout />
 			</HorizontalLayout>
 			<!--Progress name="ProgressDemo1" text="Progress" width="200" height="20" foreimage="OspDemoSkins\progress_fore.png" min="0" max="100" value="0" hor="true" align="center" /-->
-			<List name="LoadList" height="140" bkcolor="#FFFFFFFF" itemtextcolor="#FF000000" itembkcolor="#FFE2DDDF" itemselectedtextcolor="#FF000000" itemselectedbkcolor="#FFC1E3FF" itemhottextcolor="#FF000000" itemhotbkcolor="#FFE9F5FF" itemdisabledtextcolor="#FFCCCCCC" itemdisabledbkcolor="#FFFFFFFF" >
-                <ListHeader name="LoadListHeader" height="20" bkimage="List/list_header_bg.png">
-                    <ListHeaderItem text="文件名称" width="250" height="20" minwidth="250" maxwidth="340" sepwidth="1" align="center" hotimage="List/list_header_hot.png" pushedimage="List/list_header_pushed.png" sepimage="List/list_header_sep.png" />
-					<ListHeaderItem text="操作" width="50" height="20" minwidth="50" maxwidth="50" sepwidth="1" align="center" hotimage="List/list_header_hot.png" pushedimage="List/list_header_pushed.png" sepimage="List/list_header_sep.png" />
+			<List name="LoadList" vscrollbar="true" hscrollbar="true" height="140" bkcolor="#FFF0F8FF" itemtextcolor="#FF000000" itembkcolor="#FFE2DDDF" itemselectedtextcolor="#FF000000" itemselectedbkcolor="#FFC1E3FF" itemhottextcolor="#FF000000" itemhotbkcolor="#FFE9F5FF" itemdisabledtextcolor="#FFCCCCCC" itemdisabledbkcolor="#FFFFFFFF" >
+                <ListHeader name="LoadListHeader" height="20">
+                    <ListHeaderItem text="文件名称" bkimage="OspDemoSkins\ListHead.png" width="300" height="20" minwidth="250" maxwidth="400" sepwidth="1" align="center" hotimage="List/list_header_hot.png" pushedimage="List/list_header_pushed.png" sepimage="List/list_header_sep.png" />
+					<ListHeaderItem text="操作" bkimage="OspDemoSkins\ListHead.png" width="60" height="20" minwidth="60" maxwidth="60" sepwidth="1" align="center" hotimage="List/list_header_hot.png" pushedimage="List/list_header_pushed.png" sepimage="List/list_header_sep.png" />
                 </ListHeader>
             </List>
 			<HorizontalLayout />
 		</VerticalLayout>
 	</HorizontalLayout>
 	
-	<RichEdit name="EditRecv" bordercolor="#FF0000" bordersize="0" borderround="18,18" inset="4,2,4,2" bkcolor="#FFAAAAA0" bkcolor2="#FFF3F3F0" bkcolor3="#FFAAAAA0" font="1" multiline="true" vscrollbar="true" autovscroll="true" enabled="true" rich="true" readonly="false" text="<内容显示>">
+	<RichEdit name="EditRecv" bordercolor="#FF000000" bordersize="0" borderround="18,18" inset="4,2,4,2" bkcolor="#FFAAAAA0" bkcolor2="#FFF3F3F0" bkcolor3="#FFAAAAA0" font="1" multiline="true" vscrollbar="true" autovscroll="true" enabled="true" rich="true" readonly="false" text="<内容显示>">
 	</RichEdit>
-	
-	<RichEdit name="EditPost" bordercolor="#FF0000" bordersize="0" borderround="18,18" inset="4,2,4,2" bkcolor="#FFAAAAA0" bkcolor2="#FFF3F3F0" bkcolor3="#FFAAAAA0" font="1" multiline="true" vscrollbar="true" autovscroll="true" enabled="true" rich="true" readonly="false" text="<输入待发送的消息内容...>">
-	</RichEdit>
+	<Edit name="EditPost" height="50" bordercolor="#FF0000" bordersize="0" borderround="18,18" inset="4,2,4,2" bkcolor="#FFAAAAA0" bkcolor2="#FFF3F3F0" bkcolor3="#FFAAAAA0" font="1" multiline="true" vscrollbar="true" autovscroll="true" enabled="true" rich="true" readonly="false" text="<输入待发送的消息内容...>">
+	</Edit>
 	
 	<HorizontalLayout height="30">
-		<Button name="PostButton" height="25" text="发送" maxwidth="80" />
+		<Button name="PostButton" height="25" text="发送" normalimage="OspDemoSkins\button_normal.png" hotimage="OspDemoSkins\button_hover.png" pushedimage="OspDemoSkins\button_pushed.png" maxwidth="80" />
 		<HorizontalLayout />
-		<Button name="CloseButton" height="25" text="退出" maxwidth="80" />
+		<Button name="CloseButton" height="25" text="退出" normalimage="OspDemoSkins\button_normal.png" hotimage="OspDemoSkins\button_hover.png" pushedimage="OspDemoSkins\button_pushed.png" maxwidth="80" />
 	</HorizontalLayout>
   </VerticalLayout>
 </Window>

@@ -3,6 +3,8 @@
 #include "../include/ospdemo_com.h"
 
 #define MAX_INS_NO 20
+//map< u16, vector<CDemoInstance*> > g_mInfo;
+vector<CDemoInstance*> g_pvcFilePstInsNo;
 
 enum FILE_PACKET_TYPE
 {
@@ -29,8 +31,7 @@ u16 FindInsIndex(u16 wSerPostInsNo)
     return (MAX_INS_NO + 1);
 }
 
-// instance释放;
-#if 0
+// Instance释放;
 void InsRelease(u16 wCliPostInsNo, u16 wSerPostInsNo)
 {
 	s8 achCliPostInsNoStr[4] = {0};
@@ -39,14 +40,13 @@ void InsRelease(u16 wCliPostInsNo, u16 wSerPostInsNo)
 	// 释放Client端文件发送的instance;
 	sprintf(achCliPostInsNoStr, "%d", wCliPostInsNo);
 	OspPost(MAKEIID(DEMO_APP_CLIENT_NO, CInstance::DAEMON), EVENT_CLIENT_FILE_POST_INS_RELEASE,
-		achCliPostInsNoStr, strlen(achCliPostInsNoStr),	CPublic::g_uNodeNum, MAKEIID(DEMO_APP_SERVER_NO, CPublic::g_uInsNum), 0, DEMO_POST_TIMEOUT);
+		achCliPostInsNoStr, strlen(achCliPostInsNoStr), g_wNodeNum, MAKEIID(DEMO_APP_SERVER_NO, wSerPostInsNo), 0, DEMO_POST_TIMEOUT);
 
 	// 释放Server端文件发送的instance;
 	sprintf(achSerPostInsNoStr, "%d", wCliPostInsNo);
 	OspPost(MAKEIID(DEMO_APP_SERVER_NO, CInstance::DAEMON), EVENT_SERVER_FILE_POST_INS_RELEASE,
-		achSerPostInsNoStr, strlen(achSerPostInsNoStr), 0, MAKEIID(DEMO_APP_SERVER_NO, CPublic::g_uInsNum), 0, DEMO_POST_TIMEOUT);
+		achSerPostInsNoStr, strlen(achSerPostInsNoStr), 0, MAKEIID(DEMO_APP_SERVER_NO, wSerPostInsNo), 0, DEMO_POST_TIMEOUT);
 }
-#endif
 
 /****************************************************
  *
@@ -226,7 +226,7 @@ void ReceiveFilePacket(TFileMessage *strFileMsgGet)
             // 文件校验并显示结果; --TODO
             ::MessageBox(NULL, _T("已完成文件传输！文件检验OK!!"), _T("文件传输结果"), NULL);
 #endif
-            //InsRelease(wCliPostInsNo, wSerPostInsNo);
+            InsRelease(wCliPostInsNo, wSerPostInsNo);
             return;
         }
 
@@ -362,34 +362,6 @@ CDemoInstance* GetIdleInsID(CApp* pcApp)
     return pCInst;
 }
 
-// 服务端消息发送, instance分配;
-#if 0
-void ServerMsgPostInsAllot(CMessage *const pcMsg, CApp* pcApp)
-{
-    u16 wMsgLen = 0;
-    s8 *pchMsgGet = NULL;
-    TMsgAckInfo tMsgAckInfo = {0, 0, {0}};
-
-    g_wNodeNum = pcMsg->srcnode;                    // 服务端获取srcnode;
-
-	// 消息内容提取;
-	wMsgLen = pcMsg->length;
-
-	pchMsgGet = new char[wMsgLen + 1];
-	ZeroMemory(pchMsgGet, wMsgLen + 1);
-	memcpy_s(pchMsgGet, MAX_POST_MSG_LEN, pcMsg->content, wMsgLen);
-	OspPrintf(TRUE, FALSE, "Message content is: %s, length is: %d.\n", pchMsgGet, wMsgLen);
-
-    // 回复消息内容填充;
-    tMsgAckInfo.m_wNodeNo = pcMsg->srcnode;         // 
-    tMsgAckInfo.m_wInsNo  = GetIdleInsID(pcApp);    // 获得服务端空闲的instance ID;
-    ZeroMemory(tMsgAckInfo.m_achMsg, MAX_POST_MSG_LEN + 1);
-    memcpy_s(TMsgAckInfo.m_achMsg, wMsgLen, pchMsgGet, wMsgLen);
-
-    // 服务端回复客户端，发送申请到的instance;
-    OspPost(MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO), EVENT_MSG_POST_INS_ALLOT_ACK, (s8 *)TMsgAckInfo, (2*sizeof(u16) + wMsgLen), g_wNodeNum);
-}
-#endif
 // 服务端文件发送instance分配;
 void ServerFilePostInsAllot(CMessage *const pcMsg, CApp* pcApp)
 {
@@ -429,6 +401,12 @@ void ServerFilePostInsAllot(CMessage *const pcMsg, CApp* pcApp)
     ZeroMemory(pcIns->m_strFilePath, MAX_PATH);
     lstrcpy(pcIns->m_strFilePath, g_strFilePath);
 
+    // 判断文件是否存在, 存在就删除;  //后续需更改为加后缀传送;
+    if(PathFileExists(g_strFilePath))
+    {
+        remove((CW2A)g_strFilePath);
+    }
+
 	g_pvcFilePstInsNo.push_back(pcIns);
 
 	// Instance申请消息回复;
@@ -439,12 +417,10 @@ void ServerFilePostInsAllot(CMessage *const pcMsg, CApp* pcApp)
 }
 
 // 服务端文件发送instance释放;
-#if 0
 void SerFilePostInsRelease(CMessage *const pcMsg, CApp* pcApp)
 {
 	u16 wInsid = 0;
 	u16 wIndex = 0;
-	CInstance *pCInst = NULL;
 
 	// 获取收到的消息内容;
 	u16 wMsgLen = pcMsg->length;
@@ -455,24 +431,21 @@ void SerFilePostInsRelease(CMessage *const pcMsg, CApp* pcApp)
 	wInsid = atoi(pchMsgGet);
 
 	// 释放全局变量;
-    vector<TInStatus>::iterator itIndex;
-    for (itIndex = g_tInsNo.begin(); itIndex != g_tInsNo.end(); itIndex++)
+    vector<CDemoInstance*>::iterator itIndex;
+    for (itIndex = g_pvcFilePstInsNo.begin(); itIndex != g_pvcFilePstInsNo.end(); itIndex++)
 	{
-		if (itIndex->uInsNum == wInsid)
+		if ((*itIndex)->GetInsID() == wInsid)
 		{
-			g_tInsNo.erase(itIndex);
+			//g_pvcFilePstInsNo.erase(itIndex);
             break;
 		}
 	}
 
 	// 释放instance资源;
-	pCInst = pcApp->GetInstance(wInsid);
+	CInstance *pCInst = pcApp->GetInstance(wInsid);
 	pCInst->m_curState = IDLE_STATE;
 	pCInst->m_lastState = STATE_WORK;
-
-
 }
-#endif
 
 // DaemonInstanceEntry消息分发处理入口;
 void CDemoInstance::DaemonInstanceEntry(CMessage *const pcMsg, CApp* pcApp)
@@ -487,7 +460,7 @@ void CDemoInstance::DaemonInstanceEntry(CMessage *const pcMsg, CApp* pcApp)
         NextState(STATE_WORK);
         break;
 	case EVENT_SERVER_FILE_POST_INS_RELEASE:
-		//SerFilePostInsRelease(pcMsg, pcApp);
+		SerFilePostInsRelease(pcMsg, pcApp);
 		NextState(STATE_WORK);
 		break;
     default:

@@ -164,6 +164,6 @@ public:
 CFrameWindowWnd* pFrame = NULL;
 TCHAR g_strFilePath[MAX_PATH] = _T("");
 TCHAR g_strFileName[MAX_FILE_NAME] = _T("");
-TCHAR g_strFolderPath[MAX_PATH] = _T("E:\\2");
-vector<CDemoInstance*> g_pvcFilePstInsNo;
+TCHAR g_strFolderPath[MAX_PATH] = _T("F:\\2");
+
 u16 g_wNodeNum;

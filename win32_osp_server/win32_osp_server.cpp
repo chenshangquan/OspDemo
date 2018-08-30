@@ -110,6 +110,7 @@ void OnBnClickedConfig()
     
     dwIpv4Addr = inet_addr(::inet_ntoa(tAddr));
 #endif
+    // 获取窗口;
     CEditUI *pcEditPort = pFrame->m_pEditPort;
     if (pcEditPort == NULL)
     {
@@ -147,7 +148,6 @@ void OnBnClickedConfig()
 // 文件存储路径选择;
 void OnBnClickedFilePos()
 {
-#if 0
     TCHAR szFolderPath[MAX_PATH] = {0};
     u16 uPos = 0;
     u16 wIndex = 0;
@@ -167,36 +167,28 @@ void OnBnClickedFilePos()
         // 取得文件夹名;
         if (SHGetPathFromIDList(lpidlBrowse, szFolderPath))    
         {
-            // 将信息写入指定instance结点;
-            for (wIndex; wIndex < g_tInsNo.size(); wIndex++)
-            {
-                if (g_tInsNo[wIndex].uInsNum != 0 && g_tInsNo[wIndex].nUsedFlag == 0)
-                {
-                    USES_CONVERSION;
-                    char *buff = W2A(szFolderPath);
-                    OspPrintf(TRUE, FALSE, "Get FilePosPath: %s\r\n", buff);
-                    OspPrintf(TRUE, FALSE, "Get FileName: %s\r\n", g_tInsNo[wIndex].m_tFileInfo.strFileName);
-
-                    // 获取需要写入的文件路径;
-                    ZeroMemory(g_strFolderPath, MAX_PATH);
-                    ZeroMemory(g_strFilePath, MAX_PATH);
-
-                    lstrcat(g_strFolderPath, szFolderPath);
-                    lstrcat(g_strFilePath, szFolderPath);
-                    lstrcat(g_strFilePath, L"\\");
-                    lstrcat(g_strFilePath, A2W(g_tInsNo[wIndex].m_tFileInfo.strFileName));
-                    char *BUFF = W2A(g_strFilePath);
-                    OspPrintf(TRUE, FALSE, "Get FilePosPath & name: %s\r\n", BUFF);
-                }
-            }
+            // 获取需要写入的文件路径;
+            ZeroMemory(g_strFolderPath, MAX_PATH);
+            lstrcat(g_strFolderPath, szFolderPath);
         }
+
+        // 获取窗口;
+        CEditUI *pcEditPort = pFrame->m_pEditFolderSel;
+        if (pcEditPort == NULL)
+        {
+            OspPrintf(TRUE, FALSE, "Get CEditUI Failed!!\r\n");
+            return;
+        }
+
+        // 赋值;
+        pcEditPort->SetText(g_strFolderPath);
     }
 
     if (lpidlBrowse != NULL)
     {
         CoTaskMemFree(lpidlBrowse);
     }
-#endif
+
     return;
 }
 
