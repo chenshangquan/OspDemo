@@ -1,16 +1,88 @@
 // win32_osp_server.cpp : Defines the entry point for the application.
 //
 
-
 #include "stdafx.h"
 #include "win32_osp_client.h"
-#include "win32_osp_client_apply.h"
+#include "ClientInstance.h"
 #include <Shlobj.h>
 #include <shlwapi.h>
 
-// typedef zTemplate<CDemoInstance, 20, CDemoAppData, 20> CDemoApp;
-typedef zTemplate<CDemoInstance, MAX_INS_NO> CDemoApp;
+typedef zTemplate<CClientInstance, MAX_INS_NO> CDemoApp;
 CDemoApp g_cDemoApp;
+
+// 临时全局变量;
+CFrameWindowWnd *pFrame = NULL;
+extern vector<CClientInstance*> g_pvcFilePstInsNo;
+
+extern TCHAR g_strFilePath[MAX_PATH];
+extern TCHAR g_strFileName[MAX_FILE_NAME];
+
+extern u16 g_wNodeNum;
+
+// 自定义其他封装函数;
+//////////////////////////////////////////////
+
+// 判断IP字符串的合法性;
+BOOL IsIpFormatRight(LPCTSTR pIpAddr)
+{
+    s32 dwCount = 0;
+    s32 i = 0;
+    s32 dwA, dwB, dwC, dwD;
+
+    // 检查是否只包含点和数字;
+    for(i = 0; pIpAddr[i] != '\0'; i++)
+    {
+        if(!isdigit(pIpAddr[i]) && pIpAddr[i] != '.')
+            return FALSE;
+    }
+
+    // 检查形式是否为X.X.X.X;
+    for (i = 0; pIpAddr[i+1] != '\0'; i++)
+    {
+        if (isdigit(pIpAddr[i]) && pIpAddr[i+1] == '.')
+        {
+            dwCount++;
+        }
+    }    
+    if (dwCount != 3)
+    {
+        return FALSE;
+    }
+
+    // 检查区间的合法性;
+    if ((swscanf(pIpAddr, L"%d.%d.%d.%d", &dwA, &dwB, &dwC, &dwD) == 4)
+        &&(dwA >= 0 && dwA <= 255)
+        &&(dwB >= 0 && dwB <= 255)
+        &&(dwC >= 0 && dwC <= 255)
+        &&(dwD >= 0 && dwD <= 255))
+    {
+        return TRUE;
+    }
+    return FALSE;
+}
+
+// 根据InsNo, 找到列表对应的索引值;
+u16 FindIndexByInsNo(u16 wInsNo)
+{
+    u16 wIndex = 0;
+    // 寻找Insid对应的索引;
+    for (wIndex = 0; wIndex < g_pvcFilePstInsNo.size(); wIndex++)
+    {
+        if (g_pvcFilePstInsNo[wIndex]->GetInsID() == wInsNo)
+        {
+            break;
+        }
+    }
+
+    // 获取索引失败;
+    if (wIndex == g_pvcFilePstInsNo.size())
+    {
+        OspPrintf(TRUE, FALSE, "Find Index Failed.\r\n");
+        return MAX_INS_NO;
+    }
+
+    return wIndex;
+}
 
 //主程序中要引用atlbase.h 和 tchar.h;
 CFrameWindowWnd::CFrameWindowWnd(void)
@@ -234,7 +306,7 @@ void OnBnClickedFileSel()
 }
 
 
-// 文件全部发送处理按钮;
+// 文件一键发送处理按钮;
 void OnBnClickedFilePst()
 {
     u16 wIndex = 0;
@@ -243,6 +315,7 @@ void OnBnClickedFilePst()
 
     for (wIndex = 0; wIndex < g_pvcFilePstInsNo.size(); wIndex++)
     {
+        //if () //根据标志位，判断是否已传送;
         memset((s8*)&tFileInfo, 0, MAX_FILE_NAME+1+2*sizeof(u32));
         wLength = 0;
         tFileInfo.fileLength =  g_pvcFilePstInsNo[wIndex]->m_tFileInfo.fileLength;
@@ -275,6 +348,7 @@ void OnBnClickedFileStt(u16 wInsNo)
 		return;
 	}
 
+    // 获取待发送文件信息;
 	tFileInfo.fileLength =  g_pvcFilePstInsNo[wIndex]->m_tFileInfo.fileLength;
 	tFileInfo.filePacketNum =  g_pvcFilePstInsNo[wIndex]->m_tFileInfo.filePacketNum;
 	ZeroMemory(tFileInfo.strFileName, MAX_FILE_NAME + 1);
@@ -297,10 +371,10 @@ void OnBnClickedFileStp(u16 wInsNo)
 	if (wIndex == MAX_INS_NO)
 	{
 		OspPrintf(TRUE, FALSE, "Index Error.\r\n");
-		return;
-	}
+        return;
+    }
 
-	g_pvcFilePstInsNo[wIndex]->m_nPuase = !g_pvcFilePstInsNo[wIndex]->m_nPuase;
+    g_pvcFilePstInsNo[wIndex]->m_nPuase = !g_pvcFilePstInsNo[wIndex]->m_nPuase;
 
     return;
 }
@@ -311,12 +385,12 @@ void OnBnClickedFileCcl(u16 wInsNo)
 	u16 wIndex = 0;
 
 	// 清空文件发送列表;
-	if (wInsNo == MAX_INS_NO+1)
+	/*if (wInsNo == MAX_INS_NO+1)
 	{
 		g_pvcFilePstInsNo.clear();
 		ListUI2Paint();
 		return;
-	}
+	}*/
 
 	wIndex = FindIndexByInsNo(wInsNo);
 	if (wIndex == MAX_INS_NO)
@@ -328,7 +402,7 @@ void OnBnClickedFileCcl(u16 wInsNo)
     g_pvcFilePstInsNo[wIndex]->m_nCancel = 1;
     Sleep(1000);
 
-    vector<CDemoInstance*>::iterator itIndex;
+    vector<CClientInstance*>::iterator itIndex;
     for (itIndex = g_pvcFilePstInsNo.begin(); itIndex != g_pvcFilePstInsNo.end(); itIndex++)
     {
         if ((*itIndex)->GetInsID() == wInsNo)

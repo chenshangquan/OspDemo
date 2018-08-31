@@ -4,12 +4,20 @@
 
 #include "stdafx.h"
 #include "win32_osp_server.h"
-#include "win32_osp_server_apply.h"
+#include "ServerInstance.h"
 #include <Shlobj.h>
 #include <shlwapi.h>
 
-typedef zTemplate<CDemoInstance, MAX_INS_NO> CDemoApp;
+typedef zTemplate<CServerInstance, MAX_INS_NO> CDemoApp;
 CDemoApp g_cDemoApp;
+
+// 临时全局变量;
+CFrameWindowWnd *pFrame = NULL;
+//extern vector<CServerInstance*> g_pvcFilePstInsNo;
+
+extern TCHAR g_strFolderPath[MAX_PATH];
+
+extern u16 g_wNodeNum;
 
 //主程序中要引用atlbase.h 和 tchar.h;
 CFrameWindowWnd::CFrameWindowWnd(void)

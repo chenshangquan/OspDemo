@@ -1,18 +1,38 @@
-#pragma once
-
-#include "../include/ospdemo_com.h"
+#include "StdAfx.h"
+#include "ClientInstance.h"
+#include "win32_osp_client.h"
 
 /****************************************************
  *
- * CDemoInstance 函数定义;
+ * CClientInstance 函数定义;
  *
  ****************************************************/
+vector<CClientInstance*> g_pvcFilePstInsNo;
+
+TCHAR g_strFilePath[MAX_PATH] = _T("");
+TCHAR g_strFileName[MAX_FILE_NAME] = _T("");
+TCHAR g_strFolderPath[MAX_PATH] = _T("F:\\2");
+
+u16 g_wNodeNum;
+
+
+extern CFrameWindowWnd *pFrame;
+extern BOOL IsIpFormatRight(LPCTSTR pIpAddr);
+extern u16 FindIndexByInsNo(u16 wInsNo);
+
+CClientInstance::CClientInstance(void)
+{
+}
+
+CClientInstance::~CClientInstance(void)
+{
+}
 
 // InstanceEntry:event 消息处理函数定义;
 ////////////////////////////////////////
 
 // 包发送处理函数;
-void SendFileInfo(s32 fStart,s32 fSize,char *fHead, u16 wCliPostInsNo, u16 wSerPostInsNo, u16 wIndex)
+void CClientInstance::SendFileInfo(s32 fStart,s32 fSize,char *fHead, u16 wCliPostInsNo, u16 wSerPostInsNo, u16 wIndex)
 {
     OspPrintf(TRUE, FALSE, "SendFileInfo.\r\n");
     u16 wListIndex = 0;
@@ -212,36 +232,6 @@ void SendFileInfo(s32 fStart,s32 fSize,char *fHead, u16 wCliPostInsNo, u16 wSerP
         (strFileMsg.fileSize + 4 + 2*sizeof(s32) + 3*sizeof(u16)), g_wNodeNum, MAKEIID(DEMO_APP_CLIENT_NO, wCliPostInsNo));
 }
 
-// 申请服务端分配文件发送instance回复;
-void ClientFilePostInsAllotAck(CMessage *const pMsg)
-{
-	u16 wVecIndex = 0;
-	u16 wCliPostInsNo = 0;
-	u16 wSerPostInsNo = 0;
-
-	wCliPostInsNo = GETINS(pMsg->dstid);
-	wSerPostInsNo = GETINS(pMsg->srcid);
-
-	for (wVecIndex = 0; wVecIndex < g_pvcFilePstInsNo.size(); wVecIndex++)
-	{
-		if (g_pvcFilePstInsNo[wVecIndex]->m_instId == wCliPostInsNo)
-		{
-			break;
-		}
-	}
-
-	if (wVecIndex == g_pvcFilePstInsNo.size())
-	{
-        OspPrintf(TRUE, FALSE, "Client: Find vector index failed.\r\n");
-		return;
-	}
-
-    OspPrintf(TRUE, FALSE, "Client: wCliPostInsNo: %d, wSerPostInsNo: %d, wVecIndex: %d.\r\n", wCliPostInsNo, wSerPostInsNo, wVecIndex);
-	// 发送第一个包;
-	SendFileInfo(0, 0, "0", wCliPostInsNo, wSerPostInsNo, wVecIndex);
-	return;
-}
-
 // 消息接收处理函数;
 void MsgPostFunc(CMessage *const pMsg)
 {
@@ -265,24 +255,35 @@ void MsgPostFunc(CMessage *const pMsg)
     pchMsgGet = NULL;
 }
 
-// 文件信息初始化;
-#if 0
-void FileInfoInit(u16 wIndex)
+// 申请服务端分配文件发送instance回复;
+void ClientFilePostInsAllotAck(CMessage *const pMsg)
 {
-    // 初始化文件信息内容;
-    g_tInsNo[wIndex].m_tFileInfo.filePacketNum = 0;
-    g_tInsNo[wIndex].m_tFileInfo.filePacketIndex = 0;
-    g_tInsNo[wIndex].m_tFileInfo.nFilePacketBuff = 0;
+    u16 wVecIndex = 0;
+    u16 wCliPostInsNo = 0;
+    u16 wSerPostInsNo = 0;
 
-    g_tInsNo[wIndex].m_tFileInfo.fileStart  = 0;
-    g_tInsNo[wIndex].m_tFileInfo.fileSize   = 0;
-    g_tInsNo[wIndex].m_tFileInfo.lastStart  = 0;
-    g_tInsNo[wIndex].m_tFileInfo.lastSize   = 0;
-    g_tInsNo[wIndex].m_tFileInfo.fileLength = 0;
+    wCliPostInsNo = GETINS(pMsg->dstid);
+    wSerPostInsNo = GETINS(pMsg->srcid);
 
-    ZeroMemory(g_tInsNo[wIndex].m_tFileInfo.strFileName, MAX_FILE_NAME + 1);
+    for (wVecIndex = 0; wVecIndex < g_pvcFilePstInsNo.size(); wVecIndex++)
+    {
+        if (g_pvcFilePstInsNo[wVecIndex]->m_instId == wCliPostInsNo)
+        {
+            break;
+        }
+    }
+
+    if (wVecIndex == g_pvcFilePstInsNo.size())
+    {
+        OspPrintf(TRUE, FALSE, "Client: Find vector index failed.\r\n");
+        return;
+    }
+
+    OspPrintf(TRUE, FALSE, "Client: wCliPostInsNo: %d, wSerPostInsNo: %d, wVecIndex: %d.\r\n", wCliPostInsNo, wSerPostInsNo, wVecIndex);
+    // 发送第一个包;
+    g_pvcFilePstInsNo[wVecIndex]->SendFileInfo(0, 0, "0", wCliPostInsNo, wSerPostInsNo, wVecIndex);
+    return;
 }
-#endif
 
 // 处理的server端的回复包，决定下一次的文件发送;
 void OnClientReceive(CMessage *const pMsg)
@@ -315,14 +316,14 @@ void OnClientReceive(CMessage *const pMsg)
 
     OspPrintf(TRUE, FALSE, "Client: Next send, wCliPostInsNo: %d, wSerPostInsNo: %d, wIndex: %d\r\n", wCliPostInsNo, wSerPostInsNo, wIndex);
     // 提取消息发送处理;
-    SendFileInfo(nFileStart, nFileSize, achFileHead, wCliPostInsNo, wSerPostInsNo, wIndex);
+    g_pvcFilePstInsNo[wIndex]->SendFileInfo(nFileStart, nFileSize, achFileHead, wCliPostInsNo, wSerPostInsNo, wIndex);
 
     delete [] strMsgGet;
     strMsgGet = NULL;
 }
 
 // InstanceEntry消息类型分发处理入口;
-void CDemoInstance::InstanceEntry(CMessage *const pMsg)
+void CClientInstance::InstanceEntry(CMessage *const pMsg)
 {
     /*得到当前消息的类型;*/
     u16 wCurEvent = pMsg->event;
@@ -356,15 +357,15 @@ void CDemoInstance::InstanceEntry(CMessage *const pMsg)
 //////////////////////////////////////////////
 
 // 获取空闲的instance指针;
-CDemoInstance* GetIdleInsID(CApp* pcApp)
+CClientInstance* GetIdleInsID(CApp* pcApp)
 {
     u16 wIndex = 0;
-    CDemoInstance *pCInst = NULL;
+    CClientInstance *pCInst = NULL;
 
     // 遍历所有instance，寻找到一个空闲的instance并返回;
     for (wIndex = 2; wIndex <= MAX_INS_NO; wIndex++)
     {
-        pCInst = (CDemoInstance *)pcApp->GetInstance(wIndex);
+        pCInst = (CClientInstance *)pcApp->GetInstance(wIndex);
         if (pCInst->CurState() == IDLE_STATE)
         {
             pCInst->m_curState = STATE_WORK;
@@ -396,7 +397,7 @@ void ClientFilePostInsAllot(CMessage *const pcMsg, CApp* pcApp)
 	//OspPrintf(TRUE, FALSE, "message content is: %s, length is: %d.\n", pchMsgGet, wMsgLen);
 
     // 获取空闲的instance指针;
-    CDemoInstance *pcIns = GetIdleInsID(pcApp);
+    CClientInstance *pcIns = GetIdleInsID(pcApp);
     if (pcIns == 0)
     {
         OspPrintf(TRUE, FALSE, "Client:have none idle instance.\r\n");
@@ -461,7 +462,7 @@ void CliFilePostInsRelease(CMessage *const pcMsg, CApp* pcApp)
 	wInsid = atoi(pchMsgGet);
 
     // 释放全局变量;
-    vector< CDemoInstance* >::iterator itIndex;
+    vector< CClientInstance* >::iterator itIndex;
     for (itIndex = g_pvcFilePstInsNo.begin(); itIndex != g_pvcFilePstInsNo.end(); itIndex++)
     {
         if ((*itIndex)->GetInsID() == wInsid)
@@ -477,30 +478,8 @@ void CliFilePostInsRelease(CMessage *const pcMsg, CApp* pcApp)
 	pCInst->m_lastState = STATE_WORK;
 }
 
-u16 FindIndexByInsNo(u16 wInsNo)
-{
-	u16 wIndex = 0;
-	// 寻找Insid对应的索引;
-	for (wIndex = 0; wIndex < g_pvcFilePstInsNo.size(); wIndex++)
-	{
-		if (g_pvcFilePstInsNo[wIndex]->m_instId == wInsNo)
-		{
-			break;
-		}
-	}
-
-	// 获取索引失败;
-	if (wIndex == g_pvcFilePstInsNo.size())
-	{
-		OspPrintf(TRUE, FALSE, "Find Index Failed.\r\n");
-		return MAX_INS_NO;
-	}
-
-	return wIndex;
-}
-
 // 列表信息绘制;
-void ListUI2Paint()
+void CClientInstance::ListUI2Paint()
 {
 	// 绘图;
 	u16 wListIndex = 0;
@@ -671,7 +650,7 @@ void LastProgressUI2Paint(CMessage *const pcMsg)
 }
 
 // DaemonInstanceEntry消息分发处理入口;
-void CDemoInstance::DaemonInstanceEntry(CMessage *const pcMsg, CApp* pcApp)
+void CClientInstance::DaemonInstanceEntry(CMessage *const pcMsg, CApp* pcApp)
 {
     /*得到当前消息的类型;*/
     u16 wCurEvent = pcMsg->event;
@@ -709,49 +688,43 @@ void CDemoInstance::DaemonInstanceEntry(CMessage *const pcMsg, CApp* pcApp)
     return;
 }
 
-CDemoInstance::~CDemoInstance()
-{
 
-}
-
-// 自定义其他封装函数;
-//////////////////////////////////////////////
-
-// 判断IP字符串的合法性;
-BOOL IsIpFormatRight(LPCTSTR pIpAddr)
-{
-    s32 dwCount = 0;
-    s32 i = 0;
-    s32 dwA, dwB, dwC, dwD;
-
-    // 检查是否只包含点和数字;
-    for(i = 0; pIpAddr[i] != '\0'; i++)
+// CDemoListContainerElementUI类函数定义;
+#if 1
+void CDemoListContainerElementUI::SetPos(RECT rc)  
+{  
+    CContainerUI::SetPos(rc);  
+    if (m_pOwner == NULL)
     {
-        if(!isdigit(pIpAddr[i]) && pIpAddr[i] != '.')
-            return FALSE;
+        return;
     }
+    if (m_pHeader == NULL)  
+    {  
+        return;  
+    }  
+    TListInfoUI* pInfo = m_pOwner->GetListInfo();  
+    int nCount = m_items.GetSize();  
+    for (int i = 0; i < nCount; i++)  
+    {  
+        CControlUI *pHorizontalLayout = static_cast<CControlUI*>(m_items[i]);  
+        // if (pHorizontalLayout != NULL)   
+        // {   
+        // RECT rtHeader = pHeaderItem->GetPos();   
+        // RECT rt = pHorizontalLayout->GetPos();   
+        // rt.left = pInfo->rcColumn[i].left;   
+        // rt.right = pInfo->rcColumn[i].right;   
+        // pHorizontalLayout->SetPos(rt);   
+        // }   
 
-    // 检查形式是否为X.X.X.X;
-    for (i = 0; pIpAddr[i+1] != '\0'; i++)
-    {
-        if (isdigit(pIpAddr[i]) && pIpAddr[i+1] == '.')
-        {
-            dwCount++;
+        CListHeaderItemUI *pHeaderItem = static_cast<CListHeaderItemUI*>(m_pHeader->GetItemAt(i));  
+        if (pHorizontalLayout != NULL && pHeaderItem != NULL)  
+        {  
+            RECT rtHeader = pHeaderItem->GetPos();  
+            RECT rt = pHorizontalLayout->GetPos();  
+            rt.left = rtHeader.left;  
+            rt.right = rtHeader.right;  
+            pHorizontalLayout->SetPos(rt);  
         }
-    }    
-    if (dwCount != 3)
-    {
-        return FALSE;
-    }
-
-    // 检查区间的合法性;
-    if ((swscanf(pIpAddr, L"%d.%d.%d.%d", &dwA, &dwB, &dwC, &dwD) == 4)
-        &&(dwA >= 0 && dwA <= 255)
-        &&(dwB >= 0 && dwB <= 255)
-        &&(dwC >= 0 && dwC <= 255)
-        &&(dwD >= 0 && dwD <= 255))
-    {
-        return TRUE;
-    }
-    return FALSE;
+    } 
 }
+#endif
