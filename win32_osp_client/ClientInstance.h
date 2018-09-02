@@ -13,7 +13,8 @@ public:
     // Instance中的用户数据;
     //u32 m_uNodeNum;
     //u16 m_uCliInsNum;
-    //u16 m_uSerInsNum;
+    u16 m_wSerInsNum;
+	HANDLE m_hFile;
     u16 m_nUsedFlag;
 
     s32 m_nLastStart;                   // 上一个包的起始位置;
@@ -34,7 +35,11 @@ public:
 
     // Instance中的用户函数;
     //void OnMyReceive(CMessage *const pMsg);
-    void SendFileInfo(s32 fStart,s32 fSize,char *fHead, u16 wCliPostInsNo, u16 wSerPostInsNo, u16 wIndex);
+	void ClientFilePostInsAllot(CMessage *const pcMsg, CApp* pcApp);
+	void ClientFilePostInsAllotAck(CMessage *const pMsg);
+    void SendFileInfo(s32 fStart,s32 fSize,char *fHead);
+	void OnClientReceive(CMessage *const pMsg);
+	void CliFilePostInsRelease(CMessage *const pcMsg, CApp* pcApp);
     void ListUI2Paint();
     //void OnBnClickedFilePst();
 public:

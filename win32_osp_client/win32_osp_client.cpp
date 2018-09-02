@@ -315,7 +315,13 @@ void OnBnClickedFilePst()
 
     for (wIndex = 0; wIndex < g_pvcFilePstInsNo.size(); wIndex++)
     {
-        //if () //根据标志位，判断是否已传送;
+		// 该控件在文件已处于传输时，不生效;
+		if (g_pvcFilePstInsNo[wIndex]->m_nUsedFlag == 1)
+		{
+			continue;
+		}
+
+		g_pvcFilePstInsNo[wIndex]->m_nUsedFlag = 1;
         memset((s8*)&tFileInfo, 0, MAX_FILE_NAME+1+2*sizeof(u32));
         wLength = 0;
         tFileInfo.fileLength =  g_pvcFilePstInsNo[wIndex]->m_tFileInfo.fileLength;
@@ -348,6 +354,14 @@ void OnBnClickedFileStt(u16 wInsNo)
 		return;
 	}
 
+	// 该控件在文件已处于传输时，不生效;
+	if (g_pvcFilePstInsNo[wIndex]->m_nUsedFlag == 1)
+	{
+		return;
+	}
+	// 文件开始传输，使用标志位置1;
+	g_pvcFilePstInsNo[wIndex]->m_nUsedFlag = 1;
+
     // 获取待发送文件信息;
 	tFileInfo.fileLength =  g_pvcFilePstInsNo[wIndex]->m_tFileInfo.fileLength;
 	tFileInfo.filePacketNum =  g_pvcFilePstInsNo[wIndex]->m_tFileInfo.filePacketNum;
@@ -374,7 +388,21 @@ void OnBnClickedFileStp(u16 wInsNo)
         return;
     }
 
+	// 文件未开始传输前，暂停按键无效;
+	if (g_pvcFilePstInsNo[wIndex]->m_nUsedFlag == 0)
+	{
+		return;
+	}
+
     g_pvcFilePstInsNo[wIndex]->m_nPuase = !g_pvcFilePstInsNo[wIndex]->m_nPuase;
+
+	// 暂停取消，继续传文件;
+	if (g_pvcFilePstInsNo[wIndex]->m_nPuase == 0
+		&& g_pvcFilePstInsNo[wIndex]->m_nPktIndex < g_pvcFilePstInsNo[wIndex]->m_tFileInfo.filePacketNum)
+	{
+		g_pvcFilePstInsNo[wIndex]->SendFileInfo(g_pvcFilePstInsNo[wIndex]->m_nLastStart,
+			g_pvcFilePstInsNo[wIndex]->m_nLastSize, "OK!");
+	}
 
     return;
 }
@@ -384,14 +412,6 @@ void OnBnClickedFileCcl(u16 wInsNo)
 {
 	u16 wIndex = 0;
 
-	// 清空文件发送列表;
-	/*if (wInsNo == MAX_INS_NO+1)
-	{
-		g_pvcFilePstInsNo.clear();
-		ListUI2Paint();
-		return;
-	}*/
-
 	wIndex = FindIndexByInsNo(wInsNo);
 	if (wIndex == MAX_INS_NO)
 	{
@@ -400,22 +420,33 @@ void OnBnClickedFileCcl(u16 wInsNo)
 	}
 	
     g_pvcFilePstInsNo[wIndex]->m_nCancel = 1;
-    Sleep(1000);
+	// 处于暂停时，点击删除;
+	if (g_pvcFilePstInsNo[wIndex]->m_nPuase != 0)
+	{
+		// 继续包的发送流程，触发删除包的接受并处理用户的删除操作;
+		g_pvcFilePstInsNo[wIndex]->SendFileInfo(g_pvcFilePstInsNo[wIndex]->m_nLastStart,
+			g_pvcFilePstInsNo[wIndex]->m_nLastSize, "OK!");
+	}
 
     vector<CClientInstance*>::iterator itIndex;
-    for (itIndex = g_pvcFilePstInsNo.begin(); itIndex != g_pvcFilePstInsNo.end(); itIndex++)
+    for (itIndex = g_pvcFilePstInsNo.begin(); itIndex != g_pvcFilePstInsNo.end();)
     {
         if ((*itIndex)->GetInsID() == wInsNo)
         {
             // 释放instance资源;
             (*itIndex)->m_curState = IDLE_STATE;
             (*itIndex)->m_lastState = STATE_WORK;
-            g_pvcFilePstInsNo.erase(itIndex);
+
+            itIndex = g_pvcFilePstInsNo.erase(itIndex);
             // 列表重绘;
             OspPost(MAKEIID(DEMO_APP_CLIENT_NO, CInstance::DAEMON), EVENT_LIST_UI_PAINT, NULL,
                 0, 0, MAKEIID(DEMO_APP_CLIENT_NO, wInsNo), 0, DEMO_POST_TIMEOUT);
-            return;
+            //return;
         }
+		else
+		{
+			itIndex++;
+		}
     }
     return;
 }

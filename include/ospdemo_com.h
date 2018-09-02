@@ -23,7 +23,7 @@
 
 enum EM_EVENT_TYPE
 {
-    EVENT_MSG_POST = 1,                         // 普通消息发送事件;
+    EVENT_MSG_POST = 1200,                         // 普通消息发送事件;
     EVENT_SERVER_FILE_POST_INS_ALLOT_ACK,       // 服务端文件发送实例申请回复事件;
     EVENT_FILE_POST2C,                          // 客户端文件包接收响应事件;
     EVENT_FILE_POST2S,                          // 服务端文件包接收响应事件;
@@ -39,7 +39,7 @@ enum EM_EVENT_TYPE
 
 enum EM_DAEM_EVENT_TYPE
 {
-    EVENT_CLIENT_FILE_POST_INS_ALLOT = 1,       // 客户端文件发送实例申请事件;
+    EVENT_CLIENT_FILE_POST_INS_ALLOT = 1200,       // 客户端文件发送实例申请事件;
     EVENT_SERVER_FILE_POST_INS_ALLOT,           // 服务端文件发送实例申请事件;
     EVENT_CLIENT_FILE_POST_INS_RELEASE,         // 客户端文件发送实例释放事件;
     EVENT_SERVER_FILE_POST_INS_RELEASE,         // 服务端文件发送实例释放事件;
@@ -61,10 +61,10 @@ typedef struct tagFileMessage
     s8  fileHead[4];       // 标志作用;
     u32 fileStart;         // 包中数据在整个文件中的起始位置标志;
     u32 fileSize;          // 包中数据的长度;
-    u16 wCliPostInsNum;    // 包中记录客户端的发送instanceID;
-    u16 wSerPostInsNum;    // 包中记录服务端的发送instanceID;
-    u16 wIndex;            // 包中记录客户端的发送instance索引号;
-    u8  filePacket[MAX_FILE_PACKET - 4 - 2*sizeof(int)];       // 包中所传输的文件数据;
+    //u16 wCliPostInsNum;    // 包中记录客户端的发送instanceID;
+    //u16 wSerPostInsNum;    // 包中记录服务端的发送instanceID;
+    //u16 wIndex;            // 包中记录客户端的发送instance索引号;
+    u8  filePacket[MAX_FILE_PACKET - 4 - 2*sizeof(u32)];       // 包中所传输的文件数据;
 }TFileMessage;
 
 // 文件信息结构体;

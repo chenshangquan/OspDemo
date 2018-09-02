@@ -20,8 +20,9 @@ class CServerInstance :
 public:
     // Instance中的用户数据;
     //u32 m_uNodeNum;
-    //u16 m_uCliInsNum;
+    u16 m_wCliInsNum;
     //u16 m_uSerInsNum;
+	HANDLE m_hFile;
     u16 m_nUsedFlag;
 
     s32 m_nLastStart;                   // 上一个包的起始位置;
@@ -41,6 +42,14 @@ public:
     void DaemonInstanceEntry(CMessage *const pcMsg, CApp* pcApp);
 
     // Instance中的用户函数;
+	void MsgPostFunc(CMessage *const pMsg);
+	void ServerFilePostInsAllot(CMessage *const pcMsg, CApp* pcApp);
+	void OnServerReceive(CMessage *const pMsg);
+	void ReceiveFilePacket(TFileMessage *strFileMsgGet, CMessage *const pMsg);
+	void SendFilePacketEcho(s32 nFlag);
+	bool StoreFilePacket(TFileMessage *strFileMsgGet);
+	void InsRelease(CMessage *const pMsg);
+	void SerFilePostInsRelease(CMessage *const pcMsg, CApp* pcApp);
     //void OnMyReceive(CMessage *const pMsg);
     //void SendFileInfo(s32 fStart,s32 fSize,char *fHead, u16 wCliPostInsNo, u16 wSerPostInsNo, u16 wIndex);
     //void ListUI2Paint();
