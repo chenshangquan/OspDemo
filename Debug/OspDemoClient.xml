@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Window mininfo="300,400" size="500,700">
+<Window mininfo="400,500" size="500,700">
   <Font name="幼圆" size="16" default="true" />
   <VerticalLayout bkcolor="#FFC0C0C0">
 	<HorizontalLayout height="80">
 		<VerticalLayout>
-			<Edit name="EditIPAddr" text="127.0.0.1" bkcolor="FFF0F8FF" width="160"  height="25"/>
+			<HorizontalLayout height="25">
+				<Edit name="EditIPAddr" text="127.0.0.1" bkcolor="FFF0F8FF" width="160"  height="25"/>
+				<VerticalLayout width="80"/>
+				<Edit name="EditMsg" text="message box" bkcolor="FFF0F8FF" width="160"  height="25"/>
+			</HorizontalLayout>
 			<HorizontalLayout height="25">
 				<Edit name="EditPort" text="6682" bkcolor="FFF0F8FF" width="80" height="25"/>
 				<Button name="ConnectButton" text="连接按钮" normalimage="OspDemoSkins\button_normal.png" hotimage="OspDemoSkins\button_hover.png" pushedimage="OspDemoSkins\button_pushed.png" width="80" height="25" />

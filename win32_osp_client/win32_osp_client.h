@@ -20,6 +20,7 @@ public:
     CPaintManagerUI m_pm;
     
     // edit
+	CEditUI* m_pEditMsg;        // 信息窗口;
     CEditUI* m_pEditIPAddr;     // ip地址;
     CEditUI* m_pEditPort;       // 监听port;
     CEditUI* m_pEditPost;       // 待发送内容;

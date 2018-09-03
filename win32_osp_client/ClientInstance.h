@@ -39,7 +39,7 @@ public:
 	void ClientFilePostInsAllotAck(CMessage *const pMsg);
     void SendFileInfo(s32 fStart,s32 fSize,char *fHead);
 	void OnClientReceive(CMessage *const pMsg);
-	void CliFilePostInsRelease(CMessage *const pcMsg, CApp* pcApp);
+	void CliFilePostInsRelease(u32 dwInsNo);
     void ListUI2Paint();
     //void OnBnClickedFilePst();
 public:

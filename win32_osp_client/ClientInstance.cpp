@@ -11,7 +11,7 @@ vector<CClientInstance*> g_pvcFilePstInsNo;
 
 TCHAR g_strFilePath[MAX_PATH] = _T("");
 TCHAR g_strFileName[MAX_FILE_NAME] = _T("");
-TCHAR g_strFolderPath[MAX_PATH] = _T("F:\\2");
+TCHAR g_strFolderPath[MAX_PATH] = _T("E:\\2");
 
 u32 g_dwNodeNum;
 
@@ -54,6 +54,12 @@ void CClientInstance::SendFileInfo(s32 fStart,s32 fSize,char *fHead)
 	ZeroMemory(m_sendBuffer, sizeof(BYTE)*(MAX_FILE_PACKET) + 1);
 	ZeroMemory(strFileMsg.filePacket, sizeof(BYTE)*(MAX_FILE_PACKET) - 4 - 2*sizeof(s32));
 
+	// 暂停发送;  // 保留当前发包位置;
+	if (m_nPuase != 0)
+	{
+		return;
+	}
+
     // 是否基于上次分包的偏移位置;
     if (fStart == m_nLastStart && fSize == m_nLastSize)
     {
@@ -64,9 +70,12 @@ void CClientInstance::SendFileInfo(s32 fStart,s32 fSize,char *fHead)
 			//FindClose(m_hFile);
 			CloseHandle(m_hFile);
 
+			// 释放资源并重新绘图;
+			CliFilePostInsRelease(m_instId);
+
 			// 传送完毕时，给自己发送消息并进行进度条的绘制;
-			OspPost(MAKEIID(DEMO_APP_CLIENT_NO, CInstance::DAEMON), EVENT_LAST_PROGRESS_UI_PAINT, NULL,
-				0, 0, MAKEIID(DEMO_APP_CLIENT_NO, m_instId), 0, DEMO_POST_TIMEOUT);
+			/*OspPost(MAKEIID(DEMO_APP_CLIENT_NO, CInstance::DAEMON), EVENT_LAST_PROGRESS_UI_PAINT, NULL,
+				0, 0, MAKEIID(DEMO_APP_CLIENT_NO, m_instId), 0, DEMO_POST_TIMEOUT);*/
 
             return;
         }
@@ -143,12 +152,11 @@ void CClientInstance::SendFileInfo(s32 fStart,s32 fSize,char *fHead)
         {
             OspPrintf(TRUE, FALSE, "Cancel the packet send.\r\n");
 			// 释放句柄;
-			if (m_hFile != INVALID_HANDLE_VALUE)
-			{
-				FindClose(m_hFile);
-			}
+			//FindClose(m_hFile);
+			CloseHandle(m_hFile);
             
 			// 释放资源并重新绘图;
+			CliFilePostInsRelease(m_instId);
 
             return;
         }
@@ -185,7 +193,7 @@ void CClientInstance::SendFileInfo(s32 fStart,s32 fSize,char *fHead)
         strFileMsg.fileHead[3] = '\0';
     }
 
-	// 取消包发送;
+	// 取消包发送;  // 作下一包发送;
 	if (m_nCancel == 1)
 	{
 		strFileMsg.fileHead[0] = 'C';
@@ -202,12 +210,6 @@ void CClientInstance::SendFileInfo(s32 fStart,s32 fSize,char *fHead)
 			(strFileMsg.fileSize + 4 + 2*sizeof(s32)), g_dwNodeNum, MAKEIID(DEMO_APP_CLIENT_NO, m_instId));
 	}
 
-	// 暂停发送;
-	if (m_nPuase != 0)
-	{
-		return;
-	}
-
     // 读取一个包的内容;
     SetFilePointer(m_hFile, strFileMsg.fileStart, NULL, FILE_BEGIN);
     ReadFile(m_hFile, strFileMsg.filePacket, strFileMsg.fileSize, &nByte, NULL);
@@ -216,7 +218,7 @@ void CClientInstance::SendFileInfo(s32 fStart,s32 fSize,char *fHead)
     // 将待发送包的内容填充至发送缓存区;
     memcpy(m_sendBuffer, filePacket, strFileMsg.fileSize + 4 + 2*sizeof(s32));
 
-    OspPrintf(TRUE, FALSE, "Start to post the file message to server. InsNo:%d\r\n", m_wSerInsNum);
+    OspPrintf(TRUE, FALSE, "Start to post the file message to server. SerInsNo:%d\r\n", m_wSerInsNum);
 
     // 发送包到服务端;
     OspPost(MAKEIID(DEMO_APP_SERVER_NO, m_wSerInsNum), EVENT_FILE_POST2S, m_sendBuffer,
@@ -237,6 +239,11 @@ void MsgPostFunc(CMessage *const pMsg)
     memcpy_s(pchMsgGet, wMsgLen, pMsg->content, wMsgLen);
     OspPrintf(TRUE, FALSE, "message content is: %s, length is: %d.\n", pchMsgGet, wMsgLen);
 
+	if (pMsg->event == OSP_DISCONNECT)
+	{
+		return;
+	}
+
     // 窗口赋值;
     pFrame->m_pEditRecv->SetText(CA2W(pchMsgGet));
 
@@ -250,7 +257,7 @@ void OspDisconnect(CMessage *const pMsg)
 {
     // 窗口赋值;
     OspPrintf(TRUE, FALSE, "DisConnect by app!!\r\n");
-    pFrame->m_pEditRecv->SetText(_T("DisConnect!!"));
+    pFrame->m_pEditMsg->SetText(_T("DisConnect!!"));
 }
 
 // 申请服务端分配文件发送instance回复;
@@ -315,19 +322,19 @@ void CClientInstance::InstanceEntry(CMessage *const pMsg)
     {
     case OSP_DISCONNECT:
         OspDisconnect(pMsg);
-        NextState(IDLE_STATE);
+        //NextState(IDLE_STATE);
     case EVENT_MSG_POST:
         MsgPostFunc(pMsg);
-        NextState(STATE_WORK);
+        //NextState(STATE_WORK);
         //SetTimer(EVENT_TIMEOUT, 1000);
         break;
 	case EVENT_SERVER_FILE_POST_INS_ALLOT_ACK:
 		ClientFilePostInsAllotAck(pMsg);
-        NextState(STATE_WORK);
+        //NextState(STATE_WORK);
 		break;
     case EVENT_FILE_POST2C:
         OnClientReceive(pMsg);
-        NextState(STATE_WORK);
+        //NextState(STATE_WORK);
         break;
     default:
         
@@ -434,15 +441,16 @@ void CClientInstance::ClientFilePostInsAllot(CMessage *const pcMsg, CApp* pcApp)
 }
 
 // 客户端文件发送instance释放;
-void CClientInstance::CliFilePostInsRelease(CMessage *const pcMsg, CApp* pcApp)
+void CClientInstance::CliFilePostInsRelease(u32 dwInsNo)
 {
     // 释放全局变量;
     vector< CClientInstance* >::iterator itIndex;
     for (itIndex = g_pvcFilePstInsNo.begin(); itIndex != g_pvcFilePstInsNo.end();)
     {
-        if ((*itIndex)->GetInsID() == GETINS(pcMsg->srcid))
+        if ((*itIndex)->GetInsID() == dwInsNo)
         {
             itIndex = g_pvcFilePstInsNo.erase(itIndex);
+			break;
         }
 		else
 		{
@@ -451,7 +459,7 @@ void CClientInstance::CliFilePostInsRelease(CMessage *const pcMsg, CApp* pcApp)
     }
     // 列表信息重绘;
     OspPost(MAKEIID(DEMO_APP_CLIENT_NO, CInstance::DAEMON), EVENT_LIST_UI_PAINT, NULL,
-        0, 0, MAKEIID(DEMO_APP_CLIENT_NO, GETINS(pcMsg->srcid)), 0, DEMO_POST_TIMEOUT);
+        0, 0, MAKEIID(DEMO_APP_CLIENT_NO, dwInsNo), 0, DEMO_POST_TIMEOUT);
 
 	// 释放instance资源;
 	m_curState = IDLE_STATE;
@@ -640,25 +648,26 @@ void CClientInstance::DaemonInstanceEntry(CMessage *const pcMsg, CApp* pcApp)
     {
     case EVENT_CLIENT_FILE_POST_INS_ALLOT:
         ClientFilePostInsAllot(pcMsg, pcApp);
-        NextState(STATE_WORK);
+        //NextState(STATE_WORK);
         break;
 	case EVENT_CLIENT_FILE_POST_INS_RELEASE:
-		CliFilePostInsRelease(pcMsg, pcApp);
-		NextState(STATE_WORK);
+		//CliFilePostInsRelease(pcMsg, pcApp);
+		//NextState(STATE_WORK);
 		break;
 	case EVENT_LIST_UI_PAINT:
 		ListUI2Paint();
+		break;
 	case EVENT_FIRST_PROGRESS_UI_PAINT:
 		FirstProgressUI2Paint(pcMsg);
-		NextState(STATE_WORK);
+		//NextState(STATE_WORK);
 		break;
 	case EVENT_NORMAL_PROGRESS_UI_PAINT:
 		NormalProgressUI2Paint(pcMsg);
-		NextState(STATE_WORK);
+		//NextState(STATE_WORK);
 		break;
 	case EVENT_LAST_PROGRESS_UI_PAINT:
 		LastProgressUI2Paint(pcMsg);
-		NextState(STATE_WORK);
+		//NextState(STATE_WORK);
 		break;
 
     default:

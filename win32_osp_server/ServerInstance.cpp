@@ -12,7 +12,7 @@ vector<CServerInstance*> g_pvcFilePstInsNo;
 
 TCHAR g_strFilePath[MAX_PATH] = _T("");
 TCHAR g_strFileName[MAX_FILE_NAME] = _T("");
-TCHAR g_strFolderPath[MAX_PATH] = _T("F:\\2");
+TCHAR g_strFolderPath[MAX_PATH] = _T("E:\\2");
 
 //map<u32, u32> g_dwNodeNum;
 u32 g_dwNodeNum;
@@ -46,16 +46,16 @@ u16 FindInsIndex(u16 wSerPostInsNo)
 }
 
 // Instance释放;
-void CServerInstance::InsRelease(CMessage *const pMsg)
-{
-	// 释放Client端文件发送的instance;
-	OspPost(MAKEIID(DEMO_APP_CLIENT_NO, CInstance::DAEMON), EVENT_CLIENT_FILE_POST_INS_RELEASE,
-		NULL, 0, 0, pMsg->srcid, 0, DEMO_POST_TIMEOUT);
-
-	// 释放Server端文件发送的instance;
-	OspPost(MAKEIID(DEMO_APP_SERVER_NO, CInstance::DAEMON), EVENT_SERVER_FILE_POST_INS_RELEASE,
-		NULL, 0, 0, pMsg->dstid, 0, DEMO_POST_TIMEOUT);
-}
+//void CServerInstance::InsRelease(CMessage *const pMsg)
+//{
+//	// 释放Client端文件发送的instance;
+//	/*OspPost(MAKEIID(DEMO_APP_CLIENT_NO, CInstance::DAEMON), EVENT_CLIENT_FILE_POST_INS_RELEASE,
+//		NULL, 0, 0, pMsg->srcid, 0, DEMO_POST_TIMEOUT);*/
+//
+//	// 释放Server端文件发送的instance;
+//	OspPost(MAKEIID(DEMO_APP_SERVER_NO, CInstance::DAEMON), EVENT_SERVER_FILE_POST_INS_RELEASE,
+//		NULL, 0, 0, pMsg->dstid, 0, DEMO_POST_TIMEOUT);
+//}
 
 /****************************************************
  *
@@ -65,6 +65,14 @@ void CServerInstance::InsRelease(CMessage *const pMsg)
 
 // InstanceEntry:event 消息处理函数定义;
 /////////////////////////////////////////////////////
+
+// 断链消息处理;
+void OspDisconnect(CMessage *const pMsg)
+{
+	// 窗口赋值;
+	OspPrintf(TRUE, FALSE, "DisConnect by app!!\r\n");
+	pFrame->m_pEditMsg->SetText(_T("DisConnect!!"));
+}
 
 // 消息接收处理函数;
 void CServerInstance::MsgPostFunc(CMessage *const pMsg)
@@ -183,10 +191,10 @@ void CServerInstance::ReceiveFilePacket(TFileMessage *strFileMsgGet, CMessage *c
 #endif
 
     // 改成外置控制属性;
-    m_nPktIndex++;
+    m_dwPktIndex++;
 
 	// 第一个包，获取写入文件的句柄;
-	if (m_nPktIndex == 1)
+	if (m_dwPktIndex == 1)
 	{
 		// 创建文件并写入文件;
 		m_hFile = CreateFile(m_strFilePath,
@@ -198,7 +206,7 @@ void CServerInstance::ReceiveFilePacket(TFileMessage *strFileMsgGet, CMessage *c
 	}
 
     // 收到的包为最后一个包;
-    if (m_nPktIndex == m_tFileInfo.filePacketNum)
+    if (m_dwPktIndex == m_tFileInfo.filePacketNum)
     {
         if (StoreFilePacket(strFileMsgGet) == TRUE)
         {
@@ -214,7 +222,7 @@ void CServerInstance::ReceiveFilePacket(TFileMessage *strFileMsgGet, CMessage *c
 #endif
 			//FindClose(m_hFile);
             CloseHandle(m_hFile);
-            InsRelease(pMsg);
+            SerFilePostInsRelease(m_instId);
             return;
         }
 
@@ -223,7 +231,7 @@ void CServerInstance::ReceiveFilePacket(TFileMessage *strFileMsgGet, CMessage *c
         return;
     }
     // 收到的包为正常包，且还有后续包;
-    else if (m_nPktIndex < m_tFileInfo.filePacketNum)
+    else if (m_dwPktIndex < m_tFileInfo.filePacketNum)
     {
         if (StoreFilePacket(strFileMsgGet) == TRUE)
         {
@@ -272,8 +280,12 @@ void CServerInstance::OnServerReceive(CMessage *const pMsg)
         // -- TODO:删除文件;
 		//BOOL bIsClosed = FindClose(m_hFile);
 		BOOL bIsClosed = CloseHandle(m_hFile);
-		SetFileAttributes(m_strFilePath, FILE_ATTRIBUTE_NORMAL);
+		//SetFileAttributes(m_strFilePath, FILE_ATTRIBUTE_NORMAL);
 		BOOL bIsdelFile = DeleteFile(m_strFilePath);
+
+		// 释放资源;
+		SerFilePostInsRelease(m_instId);
+
 		SendFilePacketEcho(FILE_PACKET_CANCEL);
     }
 
@@ -293,9 +305,13 @@ void CServerInstance::InstanceEntry(CMessage *const pMsg)
     // 根据不同的消息类型进行处理;
     switch (wCurEvent)
     {
+	case OSP_DISCONNECT:
+		OspDisconnect(pMsg);
+		//NextState(IDLE_STATE);
+		break;
     case EVENT_MSG_POST:
         MsgPostFunc(pMsg);
-        NextState(STATE_WORK);
+        //NextState(STATE_WORK);
         break;
     case EVENT_FILE_POST2S:
         OnServerReceive(pMsg);
@@ -474,6 +490,18 @@ void CServerInstance::ServerFilePostInsAllot(CMessage *const pcMsg, CApp* pcApp)
     }
 
 	// 服务端其他变量初始化; --TODO
+	pcIns->m_hFile = INVALID_HANDLE_VALUE;
+	pcIns->m_nUsedFlag = 0;
+
+	pcIns->m_nLastStart = 0;
+	pcIns->m_nLastSize = 0;
+	pcIns->m_dwPktIndex = 0;
+	pcIns->m_dnProgValve = 0;
+	pcIns->m_nErrorPktNum = 0;
+
+	pcIns->m_nStart = 0;
+	pcIns->m_nPuase = 0;
+	pcIns->m_nCancel = 0;
 
 	g_pvcFilePstInsNo.push_back(pcIns);
 
@@ -485,15 +513,16 @@ void CServerInstance::ServerFilePostInsAllot(CMessage *const pcMsg, CApp* pcApp)
 }
 
 // 服务端文件发送instance释放;
-void CServerInstance::SerFilePostInsRelease(CMessage *const pcMsg, CApp* pcApp)
+void CServerInstance::SerFilePostInsRelease(u32 dwInsNo)
 {
 	// 释放全局变量;
     vector<CServerInstance*>::iterator itIndex;
     for (itIndex = g_pvcFilePstInsNo.begin(); itIndex != g_pvcFilePstInsNo.end();)
 	{
-		if ((*itIndex)->GetInsID() == GETINS(pcMsg->srcid))
+		if ((*itIndex)->GetInsID() == dwInsNo)
 		{
 			itIndex = g_pvcFilePstInsNo.erase(itIndex);
+			break;
 		}
 		else
 		{
@@ -501,6 +530,8 @@ void CServerInstance::SerFilePostInsRelease(CMessage *const pcMsg, CApp* pcApp)
 		}
 
 	}
+
+	// 列表信息重绘; --TODO
 
 	// 释放instance资源;
 	m_curState = IDLE_STATE;
@@ -517,11 +548,11 @@ void CServerInstance::DaemonInstanceEntry(CMessage *const pcMsg, CApp* pcApp)
     {
     case EVENT_SERVER_FILE_POST_INS_ALLOT:
         ServerFilePostInsAllot(pcMsg, pcApp);
-        NextState(STATE_WORK);
+        //NextState(STATE_WORK);
         break;
 	case EVENT_SERVER_FILE_POST_INS_RELEASE:
-		SerFilePostInsRelease(pcMsg, pcApp);
-		NextState(STATE_WORK);
+		//SerFilePostInsRelease(pcMsg, pcApp);
+		//NextState(STATE_WORK);
 		break;
     default:
         // Def_Fuction(pMsg);

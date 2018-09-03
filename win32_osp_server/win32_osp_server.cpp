@@ -31,6 +31,7 @@ CFrameWindowWnd::~CFrameWindowWnd(void)
 void CFrameWindowWnd::Init()
 {
     // Edit
+	m_pEditMsg       = static_cast<CEditUI*>(m_pm.FindControl(_T("EditMsg")));
     m_pEditIPAddr    = static_cast<CEditUI*>(m_pm.FindControl(_T("EditIPAddr")));
     m_pEditPort      = static_cast<CEditUI*>(m_pm.FindControl(_T("EditPort")));
     m_pEditPost      = static_cast<CEditUI*>(m_pm.FindControl(_T("EditPost")));
@@ -132,9 +133,9 @@ void OnBnClickedConfig()
     // OSP初始化
     OspInit(TRUE, 2510);
     // OSP初始化结果查询
-    if (IsOspInitd() == TRUE)
+    if (IsOspInitd() == FALSE)
     {
-        OspPrintf(TRUE, FALSE, "OSP Init OK!!");
+        OspPrintf(TRUE, FALSE, "OSP Init Failed!!");
     }
 
     // 创建一个TCP结点 //本地监听结点;
@@ -147,10 +148,20 @@ void OnBnClickedConfig()
     }
     else
     {
+		pFrame->m_pEditMsg->SetText(_T("OSP Init OK!"));
         OspPrintf(TRUE, FALSE, "服务器配置结果：SUCCESSFUL!! Socket Number:%d\r\n", sfd);
         //创建APP
         s32 nGreateRlt = g_cDemoApp.CreateApp("DemoServer", DEMO_APP_SERVER_NO, DEMO_APP_PRIO, DEMO_APP_QUE_SIZE); //APPID = 1
     }
+}
+
+// 断开连接处理按键;
+void OnBnClickedDisConnect()
+{
+	if (OspDisconnectTcpNode(g_dwNodeNum) == true)
+	{
+		OspPrintf(TRUE, FALSE, "Disconnect TCP Node Successful!\r\n");
+	}
 }
 
 // 文件存储路径选择;
@@ -215,6 +226,10 @@ void CFrameWindowWnd::Notify(TNotifyUI& msg)
         {
             OnBnClickedConfig();
         }
+		if (msg.pSender->GetName() == _T("DisCntButton"))
+		{
+			OnBnClickedDisConnect();
+		}
         if (msg.pSender->GetName() == _T("PostButton"))
         {
             OnBnClickedPost(m_pEditPost);

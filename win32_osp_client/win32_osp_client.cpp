@@ -96,6 +96,7 @@ CFrameWindowWnd::~CFrameWindowWnd(void)
 void CFrameWindowWnd::Init()
 {
     // Edit
+	m_pEditMsg     = static_cast<CEditUI*>(m_pm.FindControl(_T("EditMsg")));
     m_pEditIPAddr  = static_cast<CEditUI*>(m_pm.FindControl(_T("EditIPAddr")));
     m_pEditPort    = static_cast<CEditUI*>(m_pm.FindControl(_T("EditPort")));
     m_pEditPost    = static_cast<CEditUI*>(m_pm.FindControl(_T("EditPost")));
@@ -193,6 +194,7 @@ void OnBnClickedConnect()
     }
     else
     {
+		pFrame->m_pEditMsg->SetText(_T("Connect Successful!"));
         OspPrintf(TRUE, FALSE, "Connect Result:SUCCESSFUL. Node Number:%d\r\n", g_dwNodeNum);
         //::MessageBox(NULL, _T("SUCCESSFUL!!"), _T("Connect Result"), NULL);
 
@@ -316,7 +318,7 @@ void OnBnClickedFileSel()
 		//__int64 nFileSize = ((__int64)dwHigh << 32) + dwSize;//对于大文件需要将高32位和低32位拼接成64位整形;
 		//g_pvcFilePstInsNo[]
 		tFileInfo.fileLength = dwSize;
-		tFileInfo.filePacketNum = dwSize/(MAX_FILE_PACKET - 4 - 2*sizeof(s32)- 3*sizeof(u16)) + 1;
+		tFileInfo.filePacketNum = dwSize/(MAX_FILE_PACKET - 4 - 2*sizeof(s32)) + 1;
 		ZeroMemory(tFileInfo.strFileName, MAX_FILE_NAME + 1);
 		memcpy_s(tFileInfo.strFileName, MAX_FILE_NAME, (CW2A)g_strFileName, strlen((CW2A)g_strFileName));
 
@@ -444,34 +446,36 @@ void OnBnClickedFileCcl(u16 wInsNo)
 	}
 	
     g_pvcFilePstInsNo[wIndex]->m_nCancel = 1;
+
 	// 处于暂停时，点击删除;
 	if (g_pvcFilePstInsNo[wIndex]->m_nPuase != 0)
 	{
+		g_pvcFilePstInsNo[wIndex]->m_nPuase = !g_pvcFilePstInsNo[wIndex]->m_nPuase;
 		// 继续包的发送流程，触发删除包的接受并处理用户的删除操作;
 		g_pvcFilePstInsNo[wIndex]->SendFileInfo(g_pvcFilePstInsNo[wIndex]->m_nLastStart,
 			g_pvcFilePstInsNo[wIndex]->m_nLastSize, "OK!");
 	}
 
-    vector<CClientInstance*>::iterator itIndex;
-    for (itIndex = g_pvcFilePstInsNo.begin(); itIndex != g_pvcFilePstInsNo.end();)
-    {
-        if ((*itIndex)->GetInsID() == wInsNo)
-        {
-            // 释放instance资源;
-            (*itIndex)->m_curState = IDLE_STATE;
-            (*itIndex)->m_lastState = STATE_WORK;
+  //  vector<CClientInstance*>::iterator itIndex;
+  //  for (itIndex = g_pvcFilePstInsNo.begin(); itIndex != g_pvcFilePstInsNo.end();)
+  //  {
+  //      if ((*itIndex)->GetInsID() == wInsNo)
+  //      {
+  //          // 释放instance资源;
+  //          (*itIndex)->m_curState = IDLE_STATE;
+  //          (*itIndex)->m_lastState = STATE_WORK;
 
-            itIndex = g_pvcFilePstInsNo.erase(itIndex);
-            // 列表重绘;
-            OspPost(MAKEIID(DEMO_APP_CLIENT_NO, CInstance::DAEMON), EVENT_LIST_UI_PAINT, NULL,
-                0, 0, MAKEIID(DEMO_APP_CLIENT_NO, wInsNo), 0, DEMO_POST_TIMEOUT);
-            //return;
-        }
-		else
-		{
-			itIndex++;
-		}
-    }
+  //          itIndex = g_pvcFilePstInsNo.erase(itIndex);
+  //          // 列表重绘;
+  //          OspPost(MAKEIID(DEMO_APP_CLIENT_NO, CInstance::DAEMON), EVENT_LIST_UI_PAINT, NULL,
+  //              0, 0, MAKEIID(DEMO_APP_CLIENT_NO, wInsNo), 0, DEMO_POST_TIMEOUT);
+  //          //return;
+  //      }
+		//else
+		//{
+		//	itIndex++;
+		//}
+  //  }
     return;
 }
 
