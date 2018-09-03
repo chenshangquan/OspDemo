@@ -17,7 +17,7 @@ CFrameWindowWnd *pFrame = NULL;
 
 extern TCHAR g_strFolderPath[MAX_PATH];
 
-extern u16 g_wNodeNum;
+extern u32 g_dwNodeNum;
 
 //主程序中要引用atlbase.h 和 tchar.h;
 CFrameWindowWnd::CFrameWindowWnd(void)
@@ -83,7 +83,7 @@ void OnBnClickedPost(CEditUI* m_pEditPost)
     // 客户端分配到一个空闲的instance， 负责消息互传任务;
     OspPrintf(TRUE, FALSE, "Server start to send a message to client: %s, length = %d\n", achMsgGet, strlen(achMsgGet));
     OspPost(MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO), EVENT_MSG_POST, achMsgGet, strlen(achMsgGet),
-        g_wNodeNum, MAKEIID(DEMO_APP_SERVER_NO, INS_MSG_POST_NO), 0, DEMO_POST_TIMEOUT);
+        g_dwNodeNum, MAKEIID(DEMO_APP_SERVER_NO, INS_MSG_POST_NO), 0, DEMO_POST_TIMEOUT);
 }
 
 // 配置按钮消息处理;

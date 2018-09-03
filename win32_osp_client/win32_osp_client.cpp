@@ -17,7 +17,7 @@ extern vector<CClientInstance*> g_pvcFilePstInsNo;
 extern TCHAR g_strFilePath[MAX_PATH];
 extern TCHAR g_strFileName[MAX_FILE_NAME];
 
-extern u16 g_wNodeNum;
+extern u32 g_dwNodeNum;
 
 // 自定义其他封装函数;
 //////////////////////////////////////////////
@@ -141,6 +141,7 @@ void OnBnClickedConnect()
     u32 dwIpv4Addr = 0;
     u32 dwTcpPort  = 0;
     u32 dwLocalIP  = 0;
+    s32 nErroNo    = 0;
     //s32 nNodeNum = 0;
 	s8 achAppName[MAX_STR_LEN];
 
@@ -181,10 +182,10 @@ void OnBnClickedConnect()
     // 创建监听结点;
 
     // 连接外部结点;
-    g_wNodeNum = OspConnectTcpNode(dwIpv4Addr, dwTcpPort, 10,
+    g_dwNodeNum = OspConnectTcpNode(dwIpv4Addr, dwTcpPort, 10,
         3, 0, &dwLocalIP);
 
-    if (INVALID_NODE == g_wNodeNum)
+    if (INVALID_NODE == g_dwNodeNum)
     {
         OspPrintf(TRUE, FALSE, "Connection Result:INVALID NODE\r\n");
         ::MessageBox(NULL, _T("INVALID NODE"), _T("Connect Result"), NULL);
@@ -192,20 +193,43 @@ void OnBnClickedConnect()
     }
     else
     {
-        OspPrintf(TRUE, FALSE, "Connect Result:SUCCESSFUL. Node Number:%d\r\n", g_wNodeNum);
+        OspPrintf(TRUE, FALSE, "Connect Result:SUCCESSFUL. Node Number:%d\r\n", g_dwNodeNum);
         //::MessageBox(NULL, _T("SUCCESSFUL!!"), _T("Connect Result"), NULL);
 
+        // 设置断链检测参数;
+        if (OspSetHBParam(g_dwNodeNum, MAX_HB_TIMER, MAX_HB_NUM) != TRUE)
+        {
+            OspPrintf(TRUE, FALSE, "OspSetHBParam Failed!\r\n");
+            ::MessageBox(NULL, _T("OspSetHBParam Failed!"), _T("OspSetHBParam Result"), NULL);
+        }
+
+        nErroNo = OspNodeDiscCBReg(g_dwNodeNum, DEMO_APP_CLIENT_NO, INS_MSG_POST_NO);
+        if ( nErroNo != OSP_OK)
+        {
+            OspPrintf(TRUE, FALSE, "OspNodeDiscCBReg Failed, ErrorNo: %d!\r\n", nErroNo);
+            ::MessageBox(NULL, _T("OspNodeDiscCBReg Failed!"), _T("OspNodeDiscCBReg Result"), NULL);
+        }
+
 		ZeroMemory(achAppName, MAX_STR_LEN);
-		sprintf_s(achAppName, "DemoClient%d", g_wNodeNum);
+		sprintf_s(achAppName, "DemoClient%d", g_dwNodeNum);
         // 创建APP, APPID = 2
         g_cDemoApp.CreateApp(achAppName, DEMO_APP_CLIENT_NO, DEMO_APP_PRIO, DEMO_APP_QUE_SIZE);
 
         // 客户端默认分配instance 1, 即 INS_MSG_POST_NO, 负责消息互传流程;
         // 发送第一个空消息给服务端，让服务端获取Node ID;
         OspPost(MAKEIID(DEMO_APP_SERVER_NO, INS_MSG_POST_NO), EVENT_MSG_POST, NULL, 0,
-            g_wNodeNum, MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO), 0, DEMO_POST_TIMEOUT);
+            g_dwNodeNum, MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO), 0, DEMO_POST_TIMEOUT);
     }
     return;
+}
+
+// 断开连接处理按键;
+void OnBnClickedDisConnect()
+{
+    if (OspDisconnectTcpNode(g_dwNodeNum) == true)
+    {
+        OspPrintf(TRUE, FALSE, "Disconnect TCP Node Successful!\r\n");
+    }
 }
 
 // 发送消息处理按钮;
@@ -221,7 +245,7 @@ void OnBnClickedPost(CEditUI* m_pEditPost)
     // 客户端发送消息内容到服务端;
     OspPrintf(TRUE, FALSE, "Client start to send a message to server: %s , length = %d\n", achMsgGet, strlen(achMsgGet));
 	OspPost(MAKEIID(DEMO_APP_SERVER_NO, INS_MSG_POST_NO), EVENT_MSG_POST, achMsgGet, strlen(achMsgGet),
-		g_wNodeNum, MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO), 0, DEMO_POST_TIMEOUT);
+		g_dwNodeNum, MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO), 0, DEMO_POST_TIMEOUT);
 }
 
 // 文件选择处理按钮;
@@ -332,7 +356,7 @@ void OnBnClickedFilePst()
 
         // 让服务端分配一个空闲的instance，用于处理文件接收流程;
         OspPost(MAKEIID(DEMO_APP_SERVER_NO, CInstance::DAEMON), EVENT_SERVER_FILE_POST_INS_ALLOT,
-            &tFileInfo, wLength + 2*sizeof(u32), g_wNodeNum, MAKEIID(DEMO_APP_CLIENT_NO,  g_pvcFilePstInsNo[wIndex]->m_instId), 0, DEMO_POST_TIMEOUT);
+            &tFileInfo, wLength + 2*sizeof(u32), g_dwNodeNum, MAKEIID(DEMO_APP_CLIENT_NO,  g_pvcFilePstInsNo[wIndex]->m_instId), 0, DEMO_POST_TIMEOUT);
     }
 
     // 使发送按钮无效;
@@ -371,7 +395,7 @@ void OnBnClickedFileStt(u16 wInsNo)
 	
 	// 让服务端分配一个空闲的instance，用于处理文件接收流程;
 	OspPost(MAKEIID(DEMO_APP_SERVER_NO, CInstance::DAEMON), EVENT_SERVER_FILE_POST_INS_ALLOT,
-		&tFileInfo, wLength + 2*sizeof(u32), g_wNodeNum, MAKEIID(DEMO_APP_CLIENT_NO,  g_pvcFilePstInsNo[wIndex]->m_instId), 0, DEMO_POST_TIMEOUT);
+		&tFileInfo, wLength + 2*sizeof(u32), g_dwNodeNum, MAKEIID(DEMO_APP_CLIENT_NO,  g_pvcFilePstInsNo[wIndex]->m_instId), 0, DEMO_POST_TIMEOUT);
 
 	return;
 }
@@ -398,7 +422,7 @@ void OnBnClickedFileStp(u16 wInsNo)
 
 	// 暂停取消，继续传文件;
 	if (g_pvcFilePstInsNo[wIndex]->m_nPuase == 0
-		&& g_pvcFilePstInsNo[wIndex]->m_nPktIndex < g_pvcFilePstInsNo[wIndex]->m_tFileInfo.filePacketNum)
+		&& g_pvcFilePstInsNo[wIndex]->m_dwPktIndex < g_pvcFilePstInsNo[wIndex]->m_tFileInfo.filePacketNum)
 	{
 		g_pvcFilePstInsNo[wIndex]->SendFileInfo(g_pvcFilePstInsNo[wIndex]->m_nLastStart,
 			g_pvcFilePstInsNo[wIndex]->m_nLastSize, "OK!");
@@ -466,6 +490,11 @@ void CFrameWindowWnd::Notify(TNotifyUI& msg)
         if (msg.pSender->GetName() == _T("ConnectButton"))
         {
             OnBnClickedConnect();
+        }
+        // 断开连接请求;
+        if (msg.pSender->GetName() == _T("DisCntButton"))
+        {
+            OnBnClickedDisConnect();
         }
         // 消息发送按键;
         if (msg.pSender->GetName() == _T("PostButton"))

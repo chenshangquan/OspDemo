@@ -19,7 +19,7 @@ class CServerInstance :
 {
 public:
     // Instance中的用户数据;
-    //u32 m_uNodeNum;
+    u32 m_dwNodeNum;
     u16 m_wCliInsNum;
     //u16 m_uSerInsNum;
 	HANDLE m_hFile;

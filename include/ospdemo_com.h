@@ -3,6 +3,10 @@
 #include "../osplib/include/kdvtype.h"
 #include "../osplib/include/osp.h"
 
+// 断链检测参数;
+#define MAX_HB_TIMER 10
+#define MAX_HB_NUM 3
+
 #define MAX_POST_MSG_LEN 255
 #define MAX_POST_FILE_PACK_LEN 1024
 #define MAX_INS_STR_NO 16
@@ -14,8 +18,8 @@
 
 #define INS_MSG_POST_NO 1
 
-#define DEMO_APP_SERVER_NO 1
-#define DEMO_APP_CLIENT_NO 2
+#define DEMO_APP_SERVER_NO (u16)1
+#define DEMO_APP_CLIENT_NO (u16)2
 #define DEMO_APP_PRIO 100
 #define DEMO_APP_QUE_SIZE (200 << 10)
 
@@ -23,7 +27,7 @@
 
 enum EM_EVENT_TYPE
 {
-    EVENT_MSG_POST = 1200,                         // 普通消息发送事件;
+    EVENT_MSG_POST = 11200,                         // 普通消息发送事件;
     EVENT_SERVER_FILE_POST_INS_ALLOT_ACK,       // 服务端文件发送实例申请回复事件;
     EVENT_FILE_POST2C,                          // 客户端文件包接收响应事件;
     EVENT_FILE_POST2S,                          // 服务端文件包接收响应事件;
@@ -39,7 +43,7 @@ enum EM_EVENT_TYPE
 
 enum EM_DAEM_EVENT_TYPE
 {
-    EVENT_CLIENT_FILE_POST_INS_ALLOT = 1200,       // 客户端文件发送实例申请事件;
+    EVENT_CLIENT_FILE_POST_INS_ALLOT = 11200,       // 客户端文件发送实例申请事件;
     EVENT_SERVER_FILE_POST_INS_ALLOT,           // 服务端文件发送实例申请事件;
     EVENT_CLIENT_FILE_POST_INS_RELEASE,         // 客户端文件发送实例释放事件;
     EVENT_SERVER_FILE_POST_INS_RELEASE,         // 服务端文件发送实例释放事件;

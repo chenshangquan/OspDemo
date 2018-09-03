@@ -8,13 +8,14 @@
  *
  ****************************************************/
 vector<CServerInstance*> g_pvcFilePstInsNo;
+//map<u32, CServerInstance*> g_mapFilePst;
 
 TCHAR g_strFilePath[MAX_PATH] = _T("");
 TCHAR g_strFileName[MAX_FILE_NAME] = _T("");
-TCHAR g_strFolderPath[MAX_PATH] = _T("E:\\2");
+TCHAR g_strFolderPath[MAX_PATH] = _T("F:\\2");
 
-u16 g_wNodeNum;
-
+//map<u32, u32> g_dwNodeNum;
+u32 g_dwNodeNum;
 
 extern CFrameWindowWnd *pFrame;
 extern BOOL IsIpFormatRight(LPCTSTR pIpAddr);
@@ -49,11 +50,11 @@ void CServerInstance::InsRelease(CMessage *const pMsg)
 {
 	// 释放Client端文件发送的instance;
 	OspPost(MAKEIID(DEMO_APP_CLIENT_NO, CInstance::DAEMON), EVENT_CLIENT_FILE_POST_INS_RELEASE,
-		NULL, 0, 0, GETINS(pMsg->srcid), 0, DEMO_POST_TIMEOUT);
+		NULL, 0, 0, pMsg->srcid, 0, DEMO_POST_TIMEOUT);
 
 	// 释放Server端文件发送的instance;
 	OspPost(MAKEIID(DEMO_APP_SERVER_NO, CInstance::DAEMON), EVENT_SERVER_FILE_POST_INS_RELEASE,
-		NULL, 0, 0, GETINS(pMsg->dstid), 0, DEMO_POST_TIMEOUT);
+		NULL, 0, 0, pMsg->dstid, 0, DEMO_POST_TIMEOUT);
 }
 
 /****************************************************
@@ -77,9 +78,10 @@ void CServerInstance::MsgPostFunc(CMessage *const pMsg)
     // 处理空消息，一般用于服务端获取srcnode;
     if (wMsgLen == 0)
     {
-        g_wNodeNum = pMsg->srcnode;
+        g_dwNodeNum = pMsg->srcnode;
         return;
     }
+    g_dwNodeNum = pMsg->srcnode;
 
     pchMsgGet = new char[wMsgLen + 1];
     ZeroMemory(pchMsgGet, wMsgLen + 1);
@@ -161,7 +163,7 @@ void CServerInstance::SendFilePacketEcho(s32 nFlag)    //向Client发送确认包，m_f
     OspPrintf(TRUE, FALSE, "Server: Response package.\r\n");
     // 发送包到客户端
     OspPost(MAKEIID(DEMO_APP_CLIENT_NO, m_wCliInsNum), EVENT_FILE_POST2C,
-        newPacket, (4 + 2*sizeof(s32)), g_wNodeNum, MAKEIID(DEMO_APP_SERVER_NO, GetInsID()));
+        newPacket, (4 + 2*sizeof(s32)), m_dwNodeNum, MAKEIID(DEMO_APP_SERVER_NO, GetInsID()));
 }
 
 // 接受包处理函数;
@@ -210,7 +212,8 @@ void CServerInstance::ReceiveFilePacket(TFileMessage *strFileMsgGet, CMessage *c
             // 文件校验并显示结果; --TODO
             ::MessageBox(NULL, _T("已完成文件传输！文件检验OK!!"), _T("文件传输结果"), NULL);
 #endif
-			FindClose(m_hFile);
+			//FindClose(m_hFile);
+            CloseHandle(m_hFile);
             InsRelease(pMsg);
             return;
         }
@@ -337,11 +340,58 @@ CServerInstance* GetIdleInsID(CApp* pcApp)
     return pCInst;
 }
 
+// 字符串分割;
+void SplitString(const string& s, vector<string>& v, const string& c)
+{
+    string::size_type pos1, pos2;
+    pos2 = s.find(c);
+    pos1 = 0;
+    while(string::npos != pos2)
+    {
+        v.push_back(s.substr(pos1, pos2-pos1));
+         
+        pos1 = pos2 + c.size();
+        pos2 = s.find(c, pos1);
+    }
+    if(pos1 != s.length())
+        v.push_back(s.substr(pos1));
+}
+
+string to_String(int n)
+{
+    int m = n;
+    char s[100];
+    char ss[100];
+    int i=0,j=0;
+    if (n < 0)// 处理负数;
+    {
+        m = 0 - m;
+        j = 1;
+        ss[0] = '-';
+    }    
+    while (m>0)
+    {
+        s[i++] = m % 10 + '0';
+        m /= 10;
+    }
+    s[i] = '\0';
+    i = i - 1;
+    while (i >= 0)
+    {
+        ss[j++] = s[i--];
+    }    
+    ss[j] = '\0';    
+    return ss;
+}
+
 // 服务端文件发送instance分配;
 void CServerInstance::ServerFilePostInsAllot(CMessage *const pcMsg, CApp* pcApp)
 {
 	u16 wMsgLen = 0;
 	s8 *pchMsgGet = NULL;
+    vector<string> vecSplit;
+    string str1, str2, str3, str4;
+    s32 nIndex = 0;
 	
 	// 消息内容提取;
 	wMsgLen = pcMsg->length;
@@ -357,6 +407,9 @@ void CServerInstance::ServerFilePostInsAllot(CMessage *const pcMsg, CApp* pcApp)
 		OspPrintf(TRUE, FALSE, "Server:have none idle instance.\r\n");
 		return;
 	}
+
+    // 获取客户端NodeNum;
+    pcIns->m_dwNodeNum = pcMsg->srcnode;
 
 	// 获取客户端InsNo;
 	pcIns->m_wCliInsNum = GETINS(pcMsg->srcid);
@@ -380,9 +433,44 @@ void CServerInstance::ServerFilePostInsAllot(CMessage *const pcMsg, CApp* pcApp)
     lstrcpy(pcIns->m_strFilePath, g_strFilePath);
 
     // 判断文件是否存在, 存在就删除;  //后续需更改为加后缀传送;
+    BOOL bIsExists = PathFileExists(g_strFilePath);
     if(PathFileExists(g_strFilePath))
     {
-        DeleteFile(g_strFilePath);
+        str1 = (CW2A)g_strFilePath;
+        SplitString(str1, vecSplit, ".");
+        str3 = " - 副本 (";
+
+        //ZeroMemory(pcIns->m_strFilePath, MAX_PATH);
+        //wcscpy(pcIns->m_strFilePath, (CA2W)s.c_str());
+
+        for (s32 nIndex = 1; PathFileExists(pcIns->m_strFilePath) == TRUE; nIndex++)
+        {
+            str2 = "";
+            str4 = to_String(nIndex);
+            for(vector<string>::size_type i = 0; i != vecSplit.size(); ++i)
+            {
+                if (i == vecSplit.size() - 2)
+                {
+                    str2 += vecSplit[i];
+                    str2 += str3;
+                    str2 += str4;
+                    str2 += ")";
+                    continue;
+                }
+                if (i == vecSplit.size() - 1)
+                {
+                    str2 += ".";
+                    str2 += vecSplit[i];
+                    break;
+                }
+                str2 += vecSplit[i];
+            }
+
+            ZeroMemory(pcIns->m_strFilePath, MAX_PATH);
+            wcscpy(pcIns->m_strFilePath, (CA2W)str2.c_str());
+        }
+        
+        //DeleteFile(g_strFilePath);
     }
 
 	// 服务端其他变量初始化; --TODO
@@ -391,7 +479,7 @@ void CServerInstance::ServerFilePostInsAllot(CMessage *const pcMsg, CApp* pcApp)
 
 	// Instance申请消息回复;
 	OspPost(pcMsg->srcid, EVENT_SERVER_FILE_POST_INS_ALLOT_ACK,
-		NULL, 0, g_wNodeNum, MAKEIID(DEMO_APP_SERVER_NO, pcIns->m_instId), 0, DEMO_POST_TIMEOUT);
+		NULL, 0, pcIns->m_dwNodeNum, MAKEIID(DEMO_APP_SERVER_NO, pcIns->m_instId), 0, DEMO_POST_TIMEOUT);
 
     return;
 }
