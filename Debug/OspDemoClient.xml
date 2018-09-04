@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Window mininfo="400,500" size="500,700">
+<Window mininfo="450,500" size="500,700">
   <Font name="幼圆" size="16" default="true" />
   <VerticalLayout bkcolor="#FFC0C0C0">
 	<HorizontalLayout height="80">
@@ -7,7 +7,7 @@
 			<HorizontalLayout height="25">
 				<Edit name="EditIPAddr" text="127.0.0.1" bkcolor="FFF0F8FF" width="160"  height="25"/>
 				<VerticalLayout width="80"/>
-				<Edit name="EditMsg" text="message box" bkcolor="FFF0F8FF" width="160"  height="25"/>
+				<Edit name="EditMsg" text="message box" bkcolor="FFF0F8FF" width="180"  height="25"/>
 			</HorizontalLayout>
 			<HorizontalLayout height="25">
 				<Edit name="EditPort" text="6682" bkcolor="FFF0F8FF" width="80" height="25"/>
@@ -29,15 +29,26 @@
 				<Button name="FilePstButton" text="发送文件" normalimage="OspDemoSkins\button_normal.png" hotimage="OspDemoSkins\button_hover.png" pushedimage="OspDemoSkins\button_pushed.png" width="80" height="25" />
 				<Button name="FileStpButton" text="暂停发送" normalimage="OspDemoSkins\button_normal.png" hotimage="OspDemoSkins\button_hover.png" pushedimage="OspDemoSkins\button_pushed.png" width="80" height="25" />
 				<Button name="FileCclButton" text="取消发送" normalimage="OspDemoSkins\button_normal.png" hotimage="OspDemoSkins\button_hover.png" pushedimage="OspDemoSkins\button_pushed.png" width="80" height="25" />
-				<HorizontalLayout />
+				<HorizontalLayout width="20"/>
+				<Option name="OptionDemo1" text="上传列表" width="80" height="25" normalimage="OspDemoSkins\tab_normal.bmp" hotimage="OspDemoSkins\tab_hot.bmp" pushedimage="OspDemoSkins\tab_select.bmp" group="tabDemo" selected="true" />
+				<Option name="OptionDemo2" text="完成列表" width="80" height="25" normalimage="OspDemoSkins\tab_normal.bmp" hotimage="OspDemoSkins\tab_hot.bmp" pushedimage="OspDemoSkins\tab_select.bmp" group="tabDemo" selected="true" />
 			</HorizontalLayout>
 			<!--Progress name="ProgressDemo1" text="Progress" width="200" height="20" foreimage="OspDemoSkins\progress_fore.png" min="0" max="100" value="0" hor="true" align="center" /-->
-			<List name="LoadList" vscrollbar="true" hscrollbar="true" height="140" bkcolor="#FFF0F8FF" itemtextcolor="#FF000000" itembkcolor="#FFE2DDDF" itemselectedtextcolor="#FF000000" itemselectedbkcolor="#FFC1E3FF" itemhottextcolor="#FF000000" itemhotbkcolor="#FFE9F5FF" itemdisabledtextcolor="#FFCCCCCC" itemdisabledbkcolor="#FFFFFFFF" >
-                <ListHeader name="LoadListHeader" height="20">
-                    <ListHeaderItem text="文件名称" bkimage="OspDemoSkins\ListHead.png" width="300" height="20" minwidth="250" maxwidth="400" sepwidth="1" align="center" hotimage="List/list_header_hot.png" pushedimage="List/list_header_pushed.png" sepimage="List/list_header_sep.png" />
-					<ListHeaderItem text="操作" bkimage="OspDemoSkins\ListHead.png" width="60" height="20" minwidth="60" maxwidth="60" sepwidth="1" align="center" hotimage="List/list_header_hot.png" pushedimage="List/list_header_pushed.png" sepimage="List/list_header_sep.png" />
-                </ListHeader>
-            </List>
+			<TabLayout name="tabTest" height="140" bkcolor="#FFF0F8FF">
+				<List name="LoadList" vscrollbar="true" hscrollbar="true" height="140" bkcolor="#FFF0F8FF" itemtextcolor="#FF000000" itembkcolor="#FFE2DDDF" itemselectedtextcolor="#FF000000" itemselectedbkcolor="#FFC1E3FF" itemhottextcolor="#FF000000" itemhotbkcolor="#FFE9F5FF" itemdisabledtextcolor="#FFCCCCCC" itemdisabledbkcolor="#FFFFFFFF" >
+					<ListHeader name="LoadListHeader" height="20">
+						<ListHeaderItem text="文件名称" bkimage="OspDemoSkins\ListHead.png" width="300" height="20" minwidth="250" maxwidth="400" sepwidth="1" align="center" hotimage="List/list_header_hot.png" pushedimage="List/list_header_pushed.png" sepimage="List/list_header_sep.png" />
+						<ListHeaderItem text="操作" bkimage="OspDemoSkins\ListHead.png" width="60" height="20" minwidth="60" maxwidth="60" sepwidth="1" align="center" hotimage="List/list_header_hot.png" pushedimage="List/list_header_pushed.png" sepimage="List/list_header_sep.png" />
+					</ListHeader>
+				</List>
+				
+				<List name="DoneList" vscrollbar="true" hscrollbar="true" height="140" bkcolor="#FFF0F8FF" itemtextcolor="#FF000000" itembkcolor="#FFE2DDDF" itemselectedtextcolor="#FF000000" itemselectedbkcolor="#FFC1E3FF" itemhottextcolor="#FF000000" itemhotbkcolor="#FFE9F5FF" itemdisabledtextcolor="#FFCCCCCC" itemdisabledbkcolor="#FFFFFFFF" >
+					<ListHeader name="DoneListHeader" height="20">
+						<ListHeaderItem text="文件名称" bkimage="OspDemoSkins\ListHead.png" width="300" height="20" minwidth="250" maxwidth="400" sepwidth="1" align="center" hotimage="List/list_header_hot.png" pushedimage="List/list_header_pushed.png" sepimage="List/list_header_sep.png" />
+						<ListHeaderItem text="状态" bkimage="OspDemoSkins\ListHead.png" width="60" height="20" minwidth="60" maxwidth="60" sepwidth="1" align="center" hotimage="List/list_header_hot.png" pushedimage="List/list_header_pushed.png" sepimage="List/list_header_sep.png" />
+					</ListHeader>
+				</List>
+			</TabLayout>
 			<HorizontalLayout />
 		</VerticalLayout>
 	</HorizontalLayout>

@@ -12,7 +12,7 @@ vector<CServerInstance*> g_pvcFilePstInsNo;
 
 TCHAR g_strFilePath[MAX_PATH] = _T("");
 TCHAR g_strFileName[MAX_FILE_NAME] = _T("");
-TCHAR g_strFolderPath[MAX_PATH] = _T("E:\\2");
+TCHAR g_strFolderPath[MAX_PATH] = _T("F:\\2");
 
 //map<u32, u32> g_dwNodeNum;
 u32 g_dwNodeNum;
@@ -193,6 +193,9 @@ void CServerInstance::ReceiveFilePacket(TFileMessage *strFileMsgGet, CMessage *c
     // 改成外置控制属性;
     m_dwPktIndex++;
 
+    // 文件传输进度数值;
+    m_dnProgValve = 100 * m_dwPktIndex / m_tFileInfo.filePacketNum;
+
 	// 第一个包，获取写入文件的句柄;
 	if (m_dwPktIndex == 1)
 	{
@@ -203,7 +206,15 @@ void CServerInstance::ReceiveFilePacket(TFileMessage *strFileMsgGet, CMessage *c
 		{
 			OspPrintf(TRUE, FALSE, "Server: CreateFile fail!\r\n");
 		}
+
+        // 初始列表信息绘制;
+        ListUI2Paint();
 	}
+    else
+    {
+        // 列表进度信息绘制;
+        ListPrgUI2Paint();
+    }
 
     // 收到的包为最后一个包;
     if (m_dwPktIndex == m_tFileInfo.filePacketNum)
@@ -212,14 +223,7 @@ void CServerInstance::ReceiveFilePacket(TFileMessage *strFileMsgGet, CMessage *c
         {
             OspPrintf(TRUE, FALSE, "Server: End package.\r\n");
             SendFilePacketEcho(FILE_PACKET_END);
-#if 0
-            //进度条置顶，完成文件传输;
-            pProgress->SetValue(100);
-            pProgress->SetText(L"Progress(100%)");
 
-            // 文件校验并显示结果; --TODO
-            ::MessageBox(NULL, _T("已完成文件传输！文件检验OK!!"), _T("文件传输结果"), NULL);
-#endif
 			//FindClose(m_hFile);
             CloseHandle(m_hFile);
             SerFilePostInsRelease(m_instId);
@@ -237,6 +241,7 @@ void CServerInstance::ReceiveFilePacket(TFileMessage *strFileMsgGet, CMessage *c
         {
             OspPrintf(TRUE, FALSE, "Server: Next package.\r\n");
             SendFilePacketEcho(FILE_PACKET_OK);
+
             return;
         }
 
@@ -282,6 +287,9 @@ void CServerInstance::OnServerReceive(CMessage *const pMsg)
 		BOOL bIsClosed = CloseHandle(m_hFile);
 		//SetFileAttributes(m_strFilePath, FILE_ATTRIBUTE_NORMAL);
 		BOOL bIsdelFile = DeleteFile(m_strFilePath);
+
+        // 清除列表信息;
+        ListClearUI2Paint();
 
 		// 释放资源;
 		SerFilePostInsRelease(m_instId);
@@ -561,3 +569,120 @@ void CServerInstance::DaemonInstanceEntry(CMessage *const pcMsg, CApp* pcApp)
     
     return;
 }
+
+void CServerInstance::ListUI2Paint()
+{
+    s8 achProgress[MAX_FILE_NAME] = {0};
+    s8 achCtnName[MAX_STR_LEN]  = {0};
+    s8 achPrgName[MAX_STR_LEN]  = {0};
+	s8 achTxtName[MAX_STR_LEN]  = {0};
+
+    // 绘图;
+    CDemoListContainerElementUI* pcListContainer = new CDemoListContainerElementUI;
+    pcListContainer->m_pHeader = pFrame->m_pListHeader;
+    CProgressUI* pcProgress = new CProgressUI;
+    CTextUI* pcButtonDone = new CTextUI;
+
+    // 容器控件添加;
+    ZeroMemory(achCtnName, MAX_STR_LEN);
+    sprintf(achCtnName, "DemoContainer%u", m_instId);
+    pcListContainer->ApplyAttributeList(_T("height=\"25\" align=\"right\""));
+    pcListContainer->SetName((CA2W)achCtnName);
+
+    // 进度条控件添加;
+    ZeroMemory(achPrgName, MAX_STR_LEN);
+    sprintf(achPrgName, "DemoProgress%u", m_instId);
+    pcProgress->ApplyAttributeList(_T("width=\"200\" height=\"20\" foreimage=\"OspDemoSkins\\progress_fore.png\"\
+                                      min=\"0\" max=\"100\" hor=\"true\" align=\"center\""));
+    pcProgress->SetName(CA2W(achPrgName));
+    ZeroMemory(achProgress, MAX_FILE_NAME);
+    sprintf(achProgress, "%s(%ld%%)", m_tFileInfo.strFileName, m_dnProgValve);
+    pcProgress->SetValue(m_dnProgValve);
+    pcProgress->SetText(CA2W(achProgress));
+    pcListContainer->Add(pcProgress);
+
+    // 状态控件添加;
+    ZeroMemory(achTxtName, MAX_STR_LEN);
+    sprintf(achTxtName, "DemoText%u", m_instId);
+    pcButtonDone->ApplyAttributeList(_T("width=\"20\" height=\"20\""));
+    pcButtonDone->SetName(CA2W(achTxtName));
+    pcButtonDone->SetText(_T("UpLoading"));
+    pcListContainer->Add(pcButtonDone);
+
+    pFrame->m_pList->Add(pcListContainer);
+
+    return;
+}
+
+void CServerInstance::ListPrgUI2Paint()
+{
+    s8 achPrgName[MAX_STR_LEN]  = {0};
+    s8 achProgress[MAX_FILE_NAME] = {0};
+	s8 achTxtName[MAX_STR_LEN]  = {0};
+
+    ZeroMemory(achPrgName, MAX_STR_LEN);
+    sprintf(achPrgName, "DemoProgress%u", m_instId);
+    CProgressUI* pcProgress = static_cast<CProgressUI*>(pFrame->m_pm.FindControl((CA2W)achPrgName));
+    pcProgress->SetValue(m_dnProgValve);
+    ZeroMemory(achProgress, MAX_FILE_NAME);
+    sprintf(achProgress, "%s(%ld%%)", m_tFileInfo.strFileName, m_dnProgValve);
+    pcProgress->SetText(CA2W(achProgress));
+
+    ZeroMemory(achTxtName, MAX_STR_LEN);
+    sprintf(achTxtName, "DemoText%u", m_instId);
+    CTextUI* pcText = static_cast<CTextUI*>(pFrame->m_pm.FindControl((CA2W)achTxtName));
+    if (m_dnProgValve == 100)
+    {
+        pcText->SetText(_T("Done"));
+    }
+
+    return;
+}
+
+void CServerInstance::ListClearUI2Paint()
+{
+    s8 achCtnName[MAX_STR_LEN]  = {0};
+
+    // 进度条控件添加;
+    ZeroMemory(achCtnName, MAX_STR_LEN);
+    sprintf(achCtnName, "DemoContainer%u", m_instId);
+
+    CDemoListContainerElementUI* pcContainer = static_cast<CDemoListContainerElementUI*>(pFrame->m_pm.FindControl((CA2W)achCtnName));
+    if (pcContainer != NULL)
+    {
+        pFrame->m_pList->Remove(pcContainer);
+    }
+}
+
+
+// CDemoListContainerElementUI类函数定义;
+#if 1
+void CDemoListContainerElementUI::SetPos(RECT rc)  
+{  
+    CContainerUI::SetPos(rc);  
+    if (m_pOwner == NULL)
+    {
+        return;
+    }
+    if (m_pHeader == NULL)  
+    {  
+        return;  
+    }  
+    TListInfoUI* pInfo = m_pOwner->GetListInfo();  
+    int nCount = m_items.GetSize();  
+    for (int i = 0; i < nCount; i++)  
+    {  
+        CControlUI *pHorizontalLayout = static_cast<CControlUI*>(m_items[i]);
+
+        CListHeaderItemUI *pHeaderItem = static_cast<CListHeaderItemUI*>(m_pHeader->GetItemAt(i));  
+        if (pHorizontalLayout != NULL && pHeaderItem != NULL)  
+        {  
+            RECT rtHeader = pHeaderItem->GetPos();  
+            RECT rt = pHorizontalLayout->GetPos();  
+            rt.left = rtHeader.left;  
+            rt.right = rtHeader.right;  
+            pHorizontalLayout->SetPos(rt);  
+        }
+    } 
+}
+#endif

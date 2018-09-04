@@ -11,7 +11,7 @@ vector<CClientInstance*> g_pvcFilePstInsNo;
 
 TCHAR g_strFilePath[MAX_PATH] = _T("");
 TCHAR g_strFileName[MAX_FILE_NAME] = _T("");
-TCHAR g_strFolderPath[MAX_PATH] = _T("E:\\2");
+TCHAR g_strFolderPath[MAX_PATH] = _T("F:\\2");
 
 u32 g_dwNodeNum;
 
@@ -71,7 +71,7 @@ void CClientInstance::SendFileInfo(s32 fStart,s32 fSize,char *fHead)
 			CloseHandle(m_hFile);
 
 			// 释放资源并重新绘图;
-			CliFilePostInsRelease(m_instId);
+			CliFilePostDoneRelease(m_instId);
 
 			// 传送完毕时，给自己发送消息并进行进度条的绘制;
 			/*OspPost(MAKEIID(DEMO_APP_CLIENT_NO, CInstance::DAEMON), EVENT_LAST_PROGRESS_UI_PAINT, NULL,
@@ -441,6 +441,39 @@ void CClientInstance::ClientFilePostInsAllot(CMessage *const pcMsg, CApp* pcApp)
 }
 
 // 客户端文件发送instance释放;
+void CClientInstance::CliFilePostDoneRelease(u32 dwInsNo)
+{
+    s8 achFileName[MAX_FILE_NAME + 1] = {0};
+
+    // 释放全局变量;
+    vector< CClientInstance* >::iterator itIndex;
+    for (itIndex = g_pvcFilePstInsNo.begin(); itIndex != g_pvcFilePstInsNo.end();)
+    {
+        if ((*itIndex)->GetInsID() == dwInsNo)
+        {
+            memcpy_s(achFileName, MAX_FILE_NAME, (*itIndex)->m_tFileInfo.strFileName, strlen((*itIndex)->m_tFileInfo.strFileName));
+            itIndex = g_pvcFilePstInsNo.erase(itIndex);
+            break;
+        }
+        else
+        {
+            itIndex++;
+        }
+    }
+    // 列表信息重绘;
+    OspPost(MAKEIID(DEMO_APP_CLIENT_NO, CInstance::DAEMON), EVENT_LIST_UI_PAINT, NULL,
+        0, 0, MAKEIID(DEMO_APP_CLIENT_NO, dwInsNo), 0, DEMO_POST_TIMEOUT);
+
+    // 完成列表信息绘制;
+    OspPost(MAKEIID(DEMO_APP_CLIENT_NO, CInstance::DAEMON), EVENT_DONE_LIST_UI_PAINT, achFileName,
+        strlen(achFileName), 0, MAKEIID(DEMO_APP_CLIENT_NO, dwInsNo), 0, DEMO_POST_TIMEOUT);
+
+    // 释放instance资源;
+    m_curState = IDLE_STATE;
+    m_lastState = STATE_WORK;
+}
+
+// 客户端文件发送instance释放;
 void CClientInstance::CliFilePostInsRelease(u32 dwInsNo)
 {
     // 释放全局变量;
@@ -537,20 +570,55 @@ void CClientInstance::ListUI2Paint()
 	return;
 }
 
+// 完成列表信息绘制;
+void CClientInstance::DoneListUI2Paint(CMessage *const pcMsg)
+{
+    s8 achFileName[MAX_FILE_NAME + 1] = {0};
+    // 获取数据
+    memcpy_s(achFileName, MAX_FILE_NAME, pcMsg->content, pcMsg->length);
+
+    // 绘图;
+    s8 achProgress[MAX_FILE_NAME] = {0};
+
+    CDemoListContainerElementUI* pcListContainer = new CDemoListContainerElementUI;
+    pcListContainer->m_pHeader = pFrame->m_pDoneListHeader;
+    CProgressUI* pcProgress = new CProgressUI;
+    CTextUI* pcButtonDone = new CTextUI;
+
+    pcListContainer->ApplyAttributeList(_T("height=\"25\" align=\"right\""));
+
+    // 进度条控件添加;
+    pcProgress->ApplyAttributeList(_T("width=\"200\" height=\"20\" foreimage=\"OspDemoSkins\\progress_fore.png\"\
+                                      min=\"0\" max=\"100\" hor=\"true\" align=\"center\""));
+    ZeroMemory(achProgress, MAX_FILE_NAME);
+    sprintf(achProgress, "%s(%ld%%)", achFileName, 100);
+    pcProgress->SetValue(100);
+    pcProgress->SetText(CA2W(achProgress));
+    pcListContainer->Add(pcProgress);
+
+    // 开始按键控件添加;
+    pcButtonDone->ApplyAttributeList(_T("text=\"Done\" width=\"20\" height=\"20\""));
+    pcListContainer->Add(pcButtonDone);
+
+    pFrame->m_pDoneList->Add(pcListContainer);
+
+    return;
+}
+
 // 第一包图形绘制;
 void FirstProgressUI2Paint(CMessage *const pcMsg)
 {
-	u16 wInsNo = GETINS(pcMsg->srcid);
-	u16 wIndex = 0;
-	s8 achProgress[MAX_FILE_NAME] = {0};
-	s8 achPrgName[MAX_STR_LEN]  = {0};
+    /*u16 wInsNo = GETINS(pcMsg->srcid);
+    u16 wIndex = 0;
+    s8 achProgress[MAX_FILE_NAME] = {0};
+    s8 achPrgName[MAX_STR_LEN]  = {0};
 
-	wIndex = FindIndexByInsNo(wInsNo);
-	if (wIndex == MAX_INS_NO)
-	{
-		OspPrintf(TRUE, FALSE, "Index Error.\r\n");
-		return;
-	}
+    wIndex = FindIndexByInsNo(wInsNo);
+    if (wIndex == MAX_INS_NO)
+    {
+    OspPrintf(TRUE, FALSE, "Index Error.\r\n");
+    return;
+    }*/
 	
 	// 预留;
 	//sprintf(achPrgName, "DemoProgress%u", wInsNo);
@@ -657,6 +725,9 @@ void CClientInstance::DaemonInstanceEntry(CMessage *const pcMsg, CApp* pcApp)
 	case EVENT_LIST_UI_PAINT:
 		ListUI2Paint();
 		break;
+    case EVENT_DONE_LIST_UI_PAINT:
+        DoneListUI2Paint(pcMsg);
+        break;
 	case EVENT_FIRST_PROGRESS_UI_PAINT:
 		FirstProgressUI2Paint(pcMsg);
 		//NextState(STATE_WORK);

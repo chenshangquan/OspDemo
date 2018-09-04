@@ -126,7 +126,7 @@ public:
         }
     }
 
-#if 0
+#if 1
     virtual void Notify( TNotifyUI& msg )
     {
         if(msg.sType == _T("selectchanged"))

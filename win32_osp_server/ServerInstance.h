@@ -27,7 +27,7 @@ public:
 
     s32 m_nLastStart;                   // 上一个包的起始位置;
     s32 m_nLastSize;                    // 上一个包的大小;
-    u32 m_dwPktIndex;                    // 发送包的索引;
+    u32 m_dwPktIndex;                   // 发送包的索引;
     s64 m_dnProgValve;                  // 发送包的进度值;
     s32 m_nErrorPktNum;                 // 错误包的数目;
     TCHAR m_strFilePath[MAX_PATH];      // 文件的路径信息;
@@ -50,6 +50,10 @@ public:
 	bool StoreFilePacket(TFileMessage *strFileMsgGet);
 	void InsRelease(CMessage *const pMsg);
 	void SerFilePostInsRelease(u32 dwInsNo);
+    void ListUI2Paint();
+    void ListPrgUI2Paint();
+    void ListDoneUI2Paint();
+    void ListClearUI2Paint();
     //void OnMyReceive(CMessage *const pMsg);
     //void SendFileInfo(s32 fStart,s32 fSize,char *fHead, u16 wCliPostInsNo, u16 wSerPostInsNo, u16 wIndex);
     //void ListUI2Paint();
@@ -59,3 +63,12 @@ public:
     ~CServerInstance(void);
 };
 
+// CDemoListContainerElementUI类函数声明;
+#if 1
+class CDemoListContainerElementUI : public CListContainerElementUI
+{
+public:
+    void SetPos(RECT rc);
+    CListHeaderUI *m_pHeader;
+};
+#endif

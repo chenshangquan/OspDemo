@@ -115,7 +115,9 @@ void CFrameWindowWnd::Init()
     //m_pProgress       = static_cast<CProgressUI*>(m_pm.FindControl(_T("ProgressDemo1"))); 
     // List
     m_pList         = static_cast<CListUI*>(m_pm.FindControl(_T("LoadList")));
-	m_pListHeader	= static_cast<CListHeaderUI*>(m_pm.FindControl(_T("LoadListHeader")));
+    m_pDoneList     = static_cast<CListUI*>(m_pm.FindControl(_T("DoneList")));
+    m_pListHeader	= static_cast<CListHeaderUI*>(m_pm.FindControl(_T("LoadListHeader")));
+	m_pDoneListHeader	= static_cast<CListHeaderUI*>(m_pm.FindControl(_T("DoneListHeader")));
 }
 
 LPCTSTR CFrameWindowWnd::GetWindowClassName() const
@@ -228,7 +230,7 @@ void OnBnClickedConnect()
 // 断开连接处理按键;
 void OnBnClickedDisConnect()
 {
-    if (OspDisconnectTcpNode(g_dwNodeNum) == true)
+    if (OspDisconnectTcpNode(g_dwNodeNum))
     {
         OspPrintf(TRUE, FALSE, "Disconnect TCP Node Successful!\r\n");
     }
@@ -654,6 +656,18 @@ void CFrameWindowWnd::Notify(TNotifyUI& msg)
             //m_pEditRecv->SetText((m_pEditPost->GetText()).GetData());
         }
     }
+
+    if(msg.sType == _T("selectchanged"))
+    {
+        CDuiString    strName     = msg.pSender->GetName();
+        CTabLayoutUI* pControl = static_cast<CTabLayoutUI*>(m_pm.FindControl(_T("tabTest")));
+
+        if(strName == _T("OptionDemo1"))
+            pControl->SelectItem(0);
+        else if(strName == _T("OptionDemo2"))
+            pControl->SelectItem(1);
+    }
+
 }
 
 LRESULT CFrameWindowWnd::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)

@@ -19,7 +19,7 @@ public:
 
     s32 m_nLastStart;                   // 上一个包的起始位置;
     s32 m_nLastSize;                    // 上一个包的大小;
-    u32 m_dwPktIndex;                    // 发送包的索引;
+    u32 m_dwPktIndex;                   // 发送包的索引;
     s64 m_dnProgValve;                  // 发送包的进度值;
     s32 m_nErrorPktNum;                 // 错误包的数目;
     TCHAR m_strFilePath[MAX_PATH];      // 文件的路径信息;
@@ -39,8 +39,10 @@ public:
 	void ClientFilePostInsAllotAck(CMessage *const pMsg);
     void SendFileInfo(s32 fStart,s32 fSize,char *fHead);
 	void OnClientReceive(CMessage *const pMsg);
+    void CliFilePostDoneRelease(u32 dwInsNo);
 	void CliFilePostInsRelease(u32 dwInsNo);
     void ListUI2Paint();
+    void DoneListUI2Paint(CMessage *const pcMsg);
     //void OnBnClickedFilePst();
 public:
     CClientInstance(void);

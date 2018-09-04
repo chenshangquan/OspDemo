@@ -42,8 +42,8 @@ public:
     //CProgressUI* m_pProgress;       //进度条;
 
     // list
-    CListUI* m_pList;               // 列表;
-	CListHeaderUI* m_pListHeader;	// 列表头;
-
-
+    CListUI* m_pList;                   // 传输列表;
+    CListUI* m_pDoneList;               // 完成列表;
+    CListHeaderUI* m_pListHeader;	    // 列表头;
+	CListHeaderUI* m_pDoneListHeader;	// 列表头;
 };

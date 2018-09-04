@@ -18,23 +18,25 @@
                 <ListLabelElement text="张三" selected="true" />
                 <ListLabelElement text="李四" />
             </Combo>
-            <List name="ListDemo1" float="true" pos="30,314,0,0" width="139" height="218" bkcolor="#FFFFFFFF" itemtextcolor="#FF000000" itembkcolor="#FFE2DDDF" itemselectedtextcolor="#FF000000" itemselectedbkcolor="#FFC1E3FF" itemhottextcolor="#FF000000" itemhotbkcolor="#FFE9F5FF" itemdisabledtextcolor="#FFCCCCCC" itemdisabledbkcolor="#FFFFFFFF" >
-				<ListHeaderItem text="序号" width="40" height="20" minwidth="16"  sepwidth="1" align="center" hotimage="List/list_header_hot.png" pushedimage="List/list_header_pushed.png" sepimage="List/list_header_sep.png" />
-                <ListHeaderItem text="文件名称" width="200" height="20" minwidth="16"  sepwidth="1" align="center" hotimage="List/list_header_hot.png" pushedimage="List/list_header_pushed.png" sepimage="List/list_header_sep.png" />
-            </List>
+            
             <ActiveX name="ActiveXDemo1" float="true" pos="202,265,0,0" width="568" height="266" />
+			
             <Option name="OptionDemo1" text="Option1" float="true" pos="207,28,0,0" width="60" height="30" bkcolor="#FFC5D4F2" selectedtextcolor="#FF0000FF" selectedbkcolor="#FFC5D4F2" group="tabDemo" selected="true" />
             <Option name="OptionDemo2" text="Option2" float="true" pos="284,28,0,0" width="60" height="30" bkcolor="#FFFFDC78" group="tabDemo" />
             <Option name="OptionDemo3" text="Option3" float="true" pos="361,28,0,0" width="60" height="30" bkcolor="#FFBECEA1" group="tabDemo" />
-			
 			<TabLayout name="tabTest" float="true" pos="202,75,0,0" width="568" height="169" bkcolor="#FF757676">
                 <HorizontalLayout>
-                    <Label text="Option1" bkcolor="#FFC5D4F2" align="center" />
+                    <!--Label text="Option1" bkcolor="#FFC5D4F2" align="center" /-->
+					<List name="ListDemo1" width="139" height="218" bkcolor="#FFFFFFFF" itemtextcolor="#FF000000" itembkcolor="#FFE2DDDF" itemselectedtextcolor="#FF000000" itemselectedbkcolor="#FFC1E3FF" itemhottextcolor="#FF000000" itemhotbkcolor="#FFE9F5FF" itemdisabledtextcolor="#FFCCCCCC" itemdisabledbkcolor="#FFFFFFFF" >
+						<ListHeaderItem text="序号" width="40" height="20" minwidth="16"  sepwidth="1" align="center" hotimage="List/list_header_hot.png" pushedimage="List/list_header_pushed.png" sepimage="List/list_header_sep.png" />
+						<ListHeaderItem text="文件名称" width="200" height="20" minwidth="16"  sepwidth="1" align="center" hotimage="List/list_header_hot.png" pushedimage="List/list_header_pushed.png" sepimage="List/list_header_sep.png" />
+					</List>
                 </HorizontalLayout>
 
                 <Text   text="Option2" bkcolor="#FFFFDC78" align="centerwrap" height="169"/>
                 <Button text="Option3" bkcolor="#FFBECEA1" align="centerwrap" height="80" width="300"/>
             </TabLayout>
+			
         </HorizontalLayout>
 
     </VerticalLayout>

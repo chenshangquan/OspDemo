@@ -10,7 +10,7 @@
 #define MAX_POST_MSG_LEN 255
 #define MAX_POST_FILE_PACK_LEN 1024
 #define MAX_INS_STR_NO 16
-#define MAX_STR_LEN 16
+#define MAX_STR_LEN 32
 #define MAX_FILE_PACKET 10240 * 2
 #define MAX_FILE_NAME 128
 #define MAX_THREADNO 3
@@ -27,13 +27,14 @@
 
 enum EM_EVENT_TYPE
 {
-    EVENT_MSG_POST = 11200,                         // 普通消息发送事件;
+    EVENT_MSG_POST = 11200,                     // 普通消息发送事件;
     EVENT_SERVER_FILE_POST_INS_ALLOT_ACK,       // 服务端文件发送实例申请回复事件;
     EVENT_FILE_POST2C,                          // 客户端文件包接收响应事件;
     EVENT_FILE_POST2S,                          // 服务端文件包接收响应事件;
 
 	// 文件传输进度绘图;
-	EVENT_LIST_UI_PAINT,						// 列表信息绘制;
+    EVENT_LIST_UI_PAINT,						// 列表信息绘制;
+	EVENT_DONE_LIST_UI_PAINT,				    // 完成列表信息绘制;
 	EVENT_FIRST_PROGRESS_UI_PAINT,				// 第一个包的进度条绘制;
     EVENT_NORMAL_PROGRESS_UI_PAINT,				// 后续正常包的进度条绘制;
 	EVENT_LAST_PROGRESS_UI_PAINT,				// 传送完毕的进度条绘制;
