@@ -11,7 +11,7 @@ vector<CClientInstance*> g_pvcFilePstInsNo;
 
 TCHAR g_strFilePath[MAX_PATH] = _T("");
 TCHAR g_strFileName[MAX_FILE_NAME] = _T("");
-TCHAR g_strFolderPath[MAX_PATH] = _T("F:\\2");
+TCHAR g_strFolderPath[MAX_PATH] = _T("E:\\2");
 
 u32 g_dwNodeNum;
 
@@ -311,6 +311,35 @@ void CClientInstance::OnClientReceive(CMessage *const pMsg)
     strMsgGet = NULL;
 }
 
+void CClientInstance::CliFilePstInsRlsBf(CMessage *const pMsg)
+{
+	u16 dwInsNo = GETINS(pMsg->dstid);
+
+	// 释放全局变量;
+	vector< CClientInstance* >::iterator itIndex;
+	for (itIndex = g_pvcFilePstInsNo.begin(); itIndex != g_pvcFilePstInsNo.end();)
+	{
+		if ((*itIndex)->GetInsID() == dwInsNo)
+		{
+			itIndex = g_pvcFilePstInsNo.erase(itIndex);
+			break;
+		}
+		else
+		{
+			itIndex++;
+		}
+	}
+	// 列表信息重绘;
+	OspPost(MAKEIID(DEMO_APP_CLIENT_NO, CInstance::DAEMON), EVENT_LIST_UI_PAINT, NULL,
+		0, 0, MAKEIID(DEMO_APP_CLIENT_NO, dwInsNo), 0, DEMO_POST_TIMEOUT);
+
+	// 释放instance资源;
+	m_curState = IDLE_STATE;
+	m_lastState = STATE_WORK;
+
+	return;
+}
+
 // InstanceEntry消息类型分发处理入口;
 void CClientInstance::InstanceEntry(CMessage *const pMsg)
 {
@@ -336,6 +365,9 @@ void CClientInstance::InstanceEntry(CMessage *const pMsg)
         OnClientReceive(pMsg);
         //NextState(STATE_WORK);
         break;
+	case EVENT_CLIENT_FILE_POST_INS_RELEASE_BF:
+		CliFilePstInsRlsBf(pMsg);
+		break;
     default:
         
         break;
@@ -440,7 +472,7 @@ void CClientInstance::ClientFilePostInsAllot(CMessage *const pcMsg, CApp* pcApp)
     return;
 }
 
-// 客户端文件发送instance释放;
+// 客户端完成文件发送instance释放;
 void CClientInstance::CliFilePostDoneRelease(u32 dwInsNo)
 {
     s8 achFileName[MAX_FILE_NAME + 1] = {0};
@@ -718,10 +750,6 @@ void CClientInstance::DaemonInstanceEntry(CMessage *const pcMsg, CApp* pcApp)
         ClientFilePostInsAllot(pcMsg, pcApp);
         //NextState(STATE_WORK);
         break;
-	case EVENT_CLIENT_FILE_POST_INS_RELEASE:
-		//CliFilePostInsRelease(pcMsg, pcApp);
-		//NextState(STATE_WORK);
-		break;
 	case EVENT_LIST_UI_PAINT:
 		ListUI2Paint();
 		break;

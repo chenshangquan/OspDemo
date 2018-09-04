@@ -335,7 +335,7 @@ void OnBnClickedFileSel()
 
 
 // 文件一键发送处理按钮;
-void OnBnClickedFilePst()
+void OnBnClickedFilePST()
 {
     u16 wIndex = 0;
     TFileInfo tFileInfo = {0};
@@ -368,7 +368,61 @@ void OnBnClickedFilePst()
     return;
 }
 
-// 文件开始发送;
+// 文件一键暂停处理按钮;
+void OnBnClickedFileSTP()
+{
+	u16 wIndex = 0;
+
+	for (wIndex = 0; wIndex < g_pvcFilePstInsNo.size(); wIndex++)
+	{
+		// 文件未开始传输前，暂停按键无效;
+		if (g_pvcFilePstInsNo[wIndex]->m_nUsedFlag == 0)
+		{
+			return;
+		}
+
+		g_pvcFilePstInsNo[wIndex]->m_nPuase = !g_pvcFilePstInsNo[wIndex]->m_nPuase;
+
+		// 暂停取消，继续传文件;
+		if (g_pvcFilePstInsNo[wIndex]->m_nPuase == 0
+			&& g_pvcFilePstInsNo[wIndex]->m_dwPktIndex < g_pvcFilePstInsNo[wIndex]->m_tFileInfo.filePacketNum)
+		{
+			g_pvcFilePstInsNo[wIndex]->SendFileInfo(g_pvcFilePstInsNo[wIndex]->m_nLastStart,
+				g_pvcFilePstInsNo[wIndex]->m_nLastSize, "OK!");
+		}
+	}
+
+}
+
+// 文件一键取消处理按钮;
+void OnBnClickedFileCCL()
+{
+	u16 wIndex = 0;
+
+	for (wIndex = 0; wIndex < g_pvcFilePstInsNo.size(); wIndex++)
+	{
+		if (g_pvcFilePstInsNo[wIndex]->m_nUsedFlag == 0)
+		{
+			// 文件未传输前，释放客户端用于处理文件发送流程的instance;
+			OspPost(MAKEIID(DEMO_APP_CLIENT_NO, g_pvcFilePstInsNo[wIndex]->GetInsID()), EVENT_CLIENT_FILE_POST_INS_RELEASE_BF, NULL,
+				0, 0, MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO), 0, DEMO_POST_TIMEOUT);
+			return;
+		}
+
+		g_pvcFilePstInsNo[wIndex]->m_nCancel = 1;
+
+		// 处于暂停时，点击删除;
+		if (g_pvcFilePstInsNo[wIndex]->m_nPuase != 0)
+		{
+			g_pvcFilePstInsNo[wIndex]->m_nPuase = !g_pvcFilePstInsNo[wIndex]->m_nPuase;
+			// 继续包的发送流程，触发删除包的接受并处理用户的删除操作;
+			g_pvcFilePstInsNo[wIndex]->SendFileInfo(g_pvcFilePstInsNo[wIndex]->m_nLastStart,
+				g_pvcFilePstInsNo[wIndex]->m_nLastSize, "OK!");
+		}
+	}
+}
+
+// 单文件开始发送;
 void OnBnClickedFileStt(u16 wInsNo)
 {
 	u16 wIndex = 0;
@@ -404,7 +458,7 @@ void OnBnClickedFileStt(u16 wInsNo)
 	return;
 }
 
-// 文件暂停发送;
+// 单文件暂停发送;
 void OnBnClickedFileStp(u16 wInsNo)
 {
 	u16 wIndex = 0;
@@ -435,7 +489,7 @@ void OnBnClickedFileStp(u16 wInsNo)
     return;
 }
 
-// 文件取消发送;
+// 单文件取消发送;
 void OnBnClickedFileCcl(u16 wInsNo)
 {
 	u16 wIndex = 0;
@@ -447,7 +501,15 @@ void OnBnClickedFileCcl(u16 wInsNo)
 		return;
 	}
 	
-    g_pvcFilePstInsNo[wIndex]->m_nCancel = 1;
+	if (g_pvcFilePstInsNo[wIndex]->m_nUsedFlag == 0)
+	{
+		// 文件未传输前，释放客户端用于处理文件发送流程的instance;
+		OspPost(MAKEIID(DEMO_APP_CLIENT_NO, g_pvcFilePstInsNo[wIndex]->GetInsID()), EVENT_CLIENT_FILE_POST_INS_RELEASE_BF, NULL,
+			0, 0, MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO), 0, DEMO_POST_TIMEOUT);
+		return;
+	}
+
+	g_pvcFilePstInsNo[wIndex]->m_nCancel = 1;
 
 	// 处于暂停时，点击删除;
 	if (g_pvcFilePstInsNo[wIndex]->m_nPuase != 0)
@@ -458,26 +520,6 @@ void OnBnClickedFileCcl(u16 wInsNo)
 			g_pvcFilePstInsNo[wIndex]->m_nLastSize, "OK!");
 	}
 
-  //  vector<CClientInstance*>::iterator itIndex;
-  //  for (itIndex = g_pvcFilePstInsNo.begin(); itIndex != g_pvcFilePstInsNo.end();)
-  //  {
-  //      if ((*itIndex)->GetInsID() == wInsNo)
-  //      {
-  //          // 释放instance资源;
-  //          (*itIndex)->m_curState = IDLE_STATE;
-  //          (*itIndex)->m_lastState = STATE_WORK;
-
-  //          itIndex = g_pvcFilePstInsNo.erase(itIndex);
-  //          // 列表重绘;
-  //          OspPost(MAKEIID(DEMO_APP_CLIENT_NO, CInstance::DAEMON), EVENT_LIST_UI_PAINT, NULL,
-  //              0, 0, MAKEIID(DEMO_APP_CLIENT_NO, wInsNo), 0, DEMO_POST_TIMEOUT);
-  //          //return;
-  //      }
-		//else
-		//{
-		//	itIndex++;
-		//}
-  //  }
     return;
 }
 
@@ -512,19 +554,23 @@ void CFrameWindowWnd::Notify(TNotifyUI& msg)
         {
             OnBnClickedFileSel();
         }
-        // 文件全部发送按键;
+        // 文件一键发送按键;
         if (msg.pSender->GetName() == _T("FilePstButton"))
         {
-            OnBnClickedFilePst();
+            OnBnClickedFilePST();
         }
-
+		// 文件一键暂停按键;
+		if (msg.pSender->GetName() == _T("FileStpButton"))
+		{
+			OnBnClickedFileSTP();
+		}
+		// 文件一键取消按键;
+		if (msg.pSender->GetName() == _T("FileCclButton"))
+		{
+			OnBnClickedFileCCL();
+		}
 
 		// 文件发送开始按键;
-		/*if (msg.pSender->GetName() == _T("FileSttButton"))
-		{
-			OnBnClickedFileStt(MAX_INS_NO+1);
-		}*/
-		
 		if (msg.pSender->GetName() == _T("FileSttButton2"))
 		{
 			OnBnClickedFileStt(2);
@@ -563,11 +609,6 @@ void CFrameWindowWnd::Notify(TNotifyUI& msg)
 		}
 
         // 文件发送停止按键;
-        /*if (msg.pSender->GetName() == _T("FileStpButton"))
-        {
-            OnBnClickedFileStp(MAX_INS_NO+1);
-        }*/
-
 		if (msg.pSender->GetName() == _T("FileStpButton2"))
 		{
 			OnBnClickedFileStp(2);
@@ -606,11 +647,6 @@ void CFrameWindowWnd::Notify(TNotifyUI& msg)
 		}
 
         // 文件发送取消按键;
-		/*if (msg.pSender->GetName() == _T("FileCclButton"))
-		{
-			OnBnClickedFileCcl(MAX_INS_NO+1);
-		}*/
-
 		if (msg.pSender->GetName() == _T("FileCclButton2"))
 		{
 			OnBnClickedFileCcl(2);

@@ -12,7 +12,7 @@ vector<CServerInstance*> g_pvcFilePstInsNo;
 
 TCHAR g_strFilePath[MAX_PATH] = _T("");
 TCHAR g_strFileName[MAX_FILE_NAME] = _T("");
-TCHAR g_strFolderPath[MAX_PATH] = _T("F:\\2");
+TCHAR g_strFolderPath[MAX_PATH] = _T("E:\\2");
 
 //map<u32, u32> g_dwNodeNum;
 u32 g_dwNodeNum;
@@ -558,10 +558,6 @@ void CServerInstance::DaemonInstanceEntry(CMessage *const pcMsg, CApp* pcApp)
         ServerFilePostInsAllot(pcMsg, pcApp);
         //NextState(STATE_WORK);
         break;
-	case EVENT_SERVER_FILE_POST_INS_RELEASE:
-		//SerFilePostInsRelease(pcMsg, pcApp);
-		//NextState(STATE_WORK);
-		break;
     default:
         // Def_Fuction(pMsg);
         break;

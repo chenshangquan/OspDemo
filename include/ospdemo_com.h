@@ -39,15 +39,17 @@ enum EM_EVENT_TYPE
     EVENT_NORMAL_PROGRESS_UI_PAINT,				// 后续正常包的进度条绘制;
 	EVENT_LAST_PROGRESS_UI_PAINT,				// 传送完毕的进度条绘制;
 
+	EVENT_CLIENT_FILE_POST_INS_RELEASE_BF,      // 客户端文件发送实例释放事件;
+
     EVENT_NONE
 };
 
 enum EM_DAEM_EVENT_TYPE
 {
-    EVENT_CLIENT_FILE_POST_INS_ALLOT = 11200,       // 客户端文件发送实例申请事件;
+    EVENT_CLIENT_FILE_POST_INS_ALLOT = 12200,       // 客户端文件发送实例申请事件;
     EVENT_SERVER_FILE_POST_INS_ALLOT,           // 服务端文件发送实例申请事件;
-    EVENT_CLIENT_FILE_POST_INS_RELEASE,         // 客户端文件发送实例释放事件;
-    EVENT_SERVER_FILE_POST_INS_RELEASE,         // 服务端文件发送实例释放事件;
+    //EVENT_CLIENT_FILE_POST_INS_RELEASE,         // 客户端文件发送实例释放事件;
+    //EVENT_SERVER_FILE_POST_INS_RELEASE,         // 服务端文件发送实例释放事件;
 
     EVENT_END
 };

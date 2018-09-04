@@ -41,6 +41,7 @@ public:
 	void OnClientReceive(CMessage *const pMsg);
     void CliFilePostDoneRelease(u32 dwInsNo);
 	void CliFilePostInsRelease(u32 dwInsNo);
+	void CliFilePstInsRlsBf(CMessage *const pMsg);
     void ListUI2Paint();
     void DoneListUI2Paint(CMessage *const pcMsg);
     //void OnBnClickedFilePst();
