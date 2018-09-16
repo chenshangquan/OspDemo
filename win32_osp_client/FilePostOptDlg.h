@@ -21,7 +21,7 @@ public:
     virtual void Notify(TNotifyUI& msg);
     virtual void OnClick(TNotifyUI& msg);
     virtual void InitWindow();
-    //void OnPrepare();
+    void OnPrepare();
 
 public:
 
