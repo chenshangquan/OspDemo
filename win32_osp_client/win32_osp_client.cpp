@@ -11,7 +11,7 @@ typedef zTemplate<CClientInstance, MAX_INS_NO> CDemoApp;
 CDemoApp g_cDemoApp;
 
 // 临时全局变量;
-CFrameWindowWnd *pFrame = NULL;
+CFrameWindowWnd *g_pFrame = NULL;
 extern vector<CClientInstance*> g_pvcFilePstInsNo;
 
 extern TCHAR g_strFilePath[MAX_PATH];
@@ -135,9 +135,6 @@ void CFrameWindowWnd::OnFinalMessage(HWND /*hWnd*/)
     delete this; 
 }
 
-// 消息处理按键;
-///////////////////////////////////////////////////
-
 // 配置消息处理按钮;
 void OnBnClickedConnect()
 {
@@ -145,12 +142,11 @@ void OnBnClickedConnect()
     u32 dwTcpPort  = 0;
     u32 dwLocalIP  = 0;
     s32 nErroNo    = 0;
-    //s32 nNodeNum = 0;
 	s8 achAppName[MAX_STR_LEN];
 
     // 获取Ipv4Addr及TcpPort;
-    CEditUI *pcEditIPAddr = pFrame->m_pEditIPAddr;
-    CEditUI *pcEditPort = pFrame->m_pEditPort;
+    CEditUI *pcEditIPAddr = g_pFrame->m_pEditIPAddr;
+    CEditUI *pcEditPort = g_pFrame->m_pEditPort;
     if (pcEditIPAddr == NULL || pcEditPort == NULL)
     {
 		OspPrintf(TRUE, FALSE, "Get CEditUI Failed!!\r\n");
@@ -171,16 +167,10 @@ void OnBnClickedConnect()
     dwTcpPort = atoi((CW2A)cStrPort.GetData());
 
     // OSP初始化;
-    OspInit(TRUE, 2520);
-
-    // OSP初始化结果查询;
     if (IsOspInitd() != TRUE)
     {
-        OspPrintf(TRUE, FALSE, "OSP Init Failed!!\r\n");
-		::MessageBox(NULL, _T("OSP Init Failed!!"), _T("OSP Initialization Results"), NULL);
-        return;
+        OspInit(TRUE, 2530);
     }
-    OspPrintf(TRUE, FALSE, "OSP Init OK!!\r\n");
 
     // 创建监听结点;
 
@@ -196,9 +186,10 @@ void OnBnClickedConnect()
     }
     else
     {
-		pFrame->m_pEditMsg->SetText(_T("Connect Successful!"));
+        // 连接成功窗口信息提示;
+        g_pFrame->m_pEditMsg->SetText(_T("Connect Successful!"));
+
         OspPrintf(TRUE, FALSE, "Connect Result:SUCCESSFUL. Node Number:%d\r\n", g_dwNodeNum);
-        //::MessageBox(NULL, _T("SUCCESSFUL!!"), _T("Connect Result"), NULL);
 
         // 设置断链检测参数;
         if (OspSetHBParam(g_dwNodeNum, MAX_HB_TIMER, MAX_HB_NUM) != TRUE)
@@ -207,6 +198,7 @@ void OnBnClickedConnect()
             ::MessageBox(NULL, _T("OspSetHBParam Failed!"), _T("OspSetHBParam Result"), NULL);
         }
 
+        // 设置在node连接中断时需通知的appid和InstId;
         nErroNo = OspNodeDiscCBReg(g_dwNodeNum, DEMO_APP_CLIENT_NO, INS_MSG_POST_NO);
         if ( nErroNo != OSP_OK)
         {
@@ -233,14 +225,20 @@ void OnBnClickedDisConnect()
     if (OspDisconnectTcpNode(g_dwNodeNum))
     {
         OspPrintf(TRUE, FALSE, "Disconnect TCP Node Successful!\r\n");
+        g_pFrame->m_pEditMsg->SetText(_T("DisConnect!!"));
     }
 }
 
 // 发送消息处理按钮;
 void OnBnClickedPost(CEditUI* m_pEditPost)
 {
-    CDuiString cstrMsg = m_pEditPost->GetText();
     s8 achMsgGet[MAX_POST_MSG_LEN + 1] = {0};
+
+    CDuiString cstrMsg = m_pEditPost->GetText();
+    if (cstrMsg == _T(""))
+    {
+        return;
+    }
 
     // 获取窗口内容;
     ZeroMemory(achMsgGet, MAX_POST_MSG_LEN + 1);
@@ -259,7 +257,6 @@ void OnBnClickedFileSel()
     LPITEMIDLIST pil = NULL;
     INITCOMMONCONTROLSEX InitCtrls = {0};
     TCHAR szBuf[MAX_PATH] = {0};
-    s8 achBuff[MAX_PATH + 1] = {0};
     BROWSEINFO bi = {0};
     //u16 uPos = 0;
 	TFileInfo tFileInfo = {0};
@@ -286,17 +283,13 @@ void OnBnClickedFileSel()
         lstrcat(g_strFilePath, szBuf);
 
         // 获取Edit窗口并显示选择的文件路径信息;
-        CEditUI* pcEditFileSel= pFrame->m_pEditSelFile;
-        if (pcEditFileSel == NULL)
+        CEditUI* pcEditFileSel = g_pFrame->m_pEditSelFile;
+        if (pcEditFileSel)
         {
-            OspPrintf(TRUE, FALSE, "Get CEditUI Failed\r\n");
-            return;
+            pcEditFileSel->SetText(szBuf);
         }
-        pcEditFileSel->SetText(szBuf);
 
-        ZeroMemory(achBuff, MAX_PATH + 1);
-        memcpy_s(achBuff, MAX_PATH, (CW2A)szBuf, strlen((CW2A)(szBuf)));
-        OspPrintf(TRUE, FALSE, "Get FilePath: %s\r\n", achBuff);
+        OspPrintf(TRUE, FALSE, "Get FilePath: %s\r\n", (CW2A)szBuf);
 
         // 获取文件名称;
         ZeroMemory(g_strFileName, MAX_FILE_NAME);
@@ -364,7 +357,7 @@ void OnBnClickedFilePST()
     }
 
     // 使发送按钮无效;
-    pFrame->m_pBtnFilePost->SetName(_T("None"));
+    g_pFrame->m_pBtnFilePost->SetName(_T("None"));
     return;
 }
 
@@ -744,15 +737,15 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
     CPaintManagerUI::SetInstance(hInstance);
     CPaintManagerUI::SetResourcePath(CPaintManagerUI::GetInstancePath());
  
-    pFrame = new CFrameWindowWnd();
-    if(pFrame == NULL)
+    g_pFrame = new CFrameWindowWnd();
+    if(g_pFrame == NULL)
     {
         return 0;
     }
 
-    pFrame->Create(NULL, _T("OspDemoClient"), UI_WNDSTYLE_FRAME, WS_EX_WINDOWEDGE);
-    pFrame->CenterWindow();
-    pFrame->ShowWindow(true);
+    g_pFrame->Create(NULL, _T("OspDemoClient"), UI_WNDSTYLE_FRAME, WS_EX_WINDOWEDGE);
+    g_pFrame->CenterWindow();
+    g_pFrame->ShowWindow(true);
     CPaintManagerUI::MessageLoop();
 
     //delete pFrame;

@@ -12,12 +12,12 @@ vector<CServerInstance*> g_pvcFilePstInsNo;
 
 TCHAR g_strFilePath[MAX_PATH] = _T("");
 TCHAR g_strFileName[MAX_FILE_NAME] = _T("");
-TCHAR g_strFolderPath[MAX_PATH] = _T("E:\\2");
+TCHAR g_strFolderPath[MAX_PATH] = _T("F:\\2");
 
 //map<u32, u32> g_dwNodeNum;
 u32 g_dwNodeNum;
 
-extern CFrameWindowWnd *pFrame;
+extern CFrameWindowWnd *g_pFrame;
 extern BOOL IsIpFormatRight(LPCTSTR pIpAddr);
 extern u16 FindIndexByInsNo(u16 wInsNo);
 CServerInstance::CServerInstance(void)
@@ -71,7 +71,11 @@ void OspDisconnect(CMessage *const pMsg)
 {
 	// 窗口赋值;
 	OspPrintf(TRUE, FALSE, "DisConnect by app!!\r\n");
-	pFrame->m_pEditMsg->SetText(_T("DisConnect!!"));
+    //CDuiString strSrcNode(std::to_string(pMsg->srcnode));
+    CDuiString strSrcNode = _T("1");
+    CDuiString strDisCnt(_T("DisCnt, NodeID:"));
+    CDuiString strDisMsg = strDisCnt + strSrcNode;
+	g_pFrame->m_pEditMsg->SetText(strDisMsg);
 }
 
 // 消息接收处理函数;
@@ -79,6 +83,7 @@ void CServerInstance::MsgPostFunc(CMessage *const pMsg)
 {
     u16 wMsgLen = 0;
     s8 *pchMsgGet = NULL;
+    s32 nErroNo    = 0;
 
     // 消息内容提取;
     wMsgLen = pMsg->length;
@@ -87,6 +92,24 @@ void CServerInstance::MsgPostFunc(CMessage *const pMsg)
     if (wMsgLen == 0)
     {
         g_dwNodeNum = pMsg->srcnode;
+
+        // 连接成功窗口信息提示;
+        g_pFrame->m_pEditMsg->SetText(_T("Connect Successful!"));
+
+        // 设置断链检测参数;
+        if (OspSetHBParam(g_dwNodeNum, MAX_HB_TIMER, MAX_HB_NUM) != TRUE)
+        {
+            OspPrintf(TRUE, FALSE, "OspSetHBParam Failed!\r\n");
+            ::MessageBox(NULL, _T("OspSetHBParam Failed!"), _T("OspSetHBParam Result"), NULL);
+        }
+
+        // 设置在node连接中断时需通知的appid和InstId;
+        nErroNo = OspNodeDiscCBReg(g_dwNodeNum, DEMO_APP_SERVER_NO, INS_MSG_POST_NO);
+        if ( nErroNo != OSP_OK)
+        {
+            OspPrintf(TRUE, FALSE, "OspNodeDiscCBReg Failed, ErrorNo: %d!\r\n", nErroNo);
+            ::MessageBox(NULL, _T("OspNodeDiscCBReg Failed!"), _T("OspNodeDiscCBReg Result"), NULL);
+        }
         return;
     }
     g_dwNodeNum = pMsg->srcnode;
@@ -97,7 +120,7 @@ void CServerInstance::MsgPostFunc(CMessage *const pMsg)
     OspPrintf(TRUE, FALSE, "message content is: %s, length is: %d.\n", pchMsgGet, wMsgLen);
 
     // 窗口赋值;
-    CEditUI* pEditRecv =  pFrame->m_pEditRecv;
+    CEditUI* pEditRecv =  g_pFrame->m_pEditRecv;
     pEditRecv->SetText(CA2W(pchMsgGet));
 
     // 释放空间;
@@ -225,7 +248,10 @@ void CServerInstance::ReceiveFilePacket(TFileMessage *strFileMsgGet, CMessage *c
             SendFilePacketEcho(FILE_PACKET_END);
 
 			//FindClose(m_hFile);
-            CloseHandle(m_hFile);
+            if (m_hFile)
+            {
+                CloseHandle(m_hFile);
+            }
             SerFilePostInsRelease(m_instId);
             return;
         }
@@ -284,7 +310,8 @@ void CServerInstance::OnServerReceive(CMessage *const pMsg)
 
         // -- TODO:删除文件;
 		//BOOL bIsClosed = FindClose(m_hFile);
-		BOOL bIsClosed = CloseHandle(m_hFile);
+        //BOOL bIsClosed = CloseHandle(m_hFile);
+        CloseHandle(m_hFile);
 		//SetFileAttributes(m_strFilePath, FILE_ATTRIBUTE_NORMAL);
 		BOOL bIsdelFile = DeleteFile(m_strFilePath);
 
@@ -575,7 +602,7 @@ void CServerInstance::ListUI2Paint()
 
     // 绘图;
     CDemoListContainerElementUI* pcListContainer = new CDemoListContainerElementUI;
-    pcListContainer->m_pHeader = pFrame->m_pListHeader;
+    pcListContainer->m_pHeader = g_pFrame->m_pListHeader;
     CProgressUI* pcProgress = new CProgressUI;
     CTextUI* pcButtonDone = new CTextUI;
 
@@ -605,7 +632,7 @@ void CServerInstance::ListUI2Paint()
     pcButtonDone->SetText(_T("UpLoading"));
     pcListContainer->Add(pcButtonDone);
 
-    pFrame->m_pList->Add(pcListContainer);
+    g_pFrame->m_pList->Add(pcListContainer);
 
     return;
 }
@@ -618,7 +645,7 @@ void CServerInstance::ListPrgUI2Paint()
 
     ZeroMemory(achPrgName, MAX_STR_LEN);
     sprintf(achPrgName, "DemoProgress%u", m_instId);
-    CProgressUI* pcProgress = static_cast<CProgressUI*>(pFrame->m_pm.FindControl((CA2W)achPrgName));
+    CProgressUI* pcProgress = static_cast<CProgressUI*>(g_pFrame->m_pm.FindControl((CA2W)achPrgName));
     pcProgress->SetValue(m_dnProgValve);
     ZeroMemory(achProgress, MAX_FILE_NAME);
     sprintf(achProgress, "%s(%ld%%)", m_tFileInfo.strFileName, m_dnProgValve);
@@ -626,7 +653,7 @@ void CServerInstance::ListPrgUI2Paint()
 
     ZeroMemory(achTxtName, MAX_STR_LEN);
     sprintf(achTxtName, "DemoText%u", m_instId);
-    CTextUI* pcText = static_cast<CTextUI*>(pFrame->m_pm.FindControl((CA2W)achTxtName));
+    CTextUI* pcText = static_cast<CTextUI*>(g_pFrame->m_pm.FindControl((CA2W)achTxtName));
     if (m_dnProgValve == 100)
     {
         pcText->SetText(_T("Done"));
@@ -643,10 +670,10 @@ void CServerInstance::ListClearUI2Paint()
     ZeroMemory(achCtnName, MAX_STR_LEN);
     sprintf(achCtnName, "DemoContainer%u", m_instId);
 
-    CDemoListContainerElementUI* pcContainer = static_cast<CDemoListContainerElementUI*>(pFrame->m_pm.FindControl((CA2W)achCtnName));
+    CDemoListContainerElementUI* pcContainer = static_cast<CDemoListContainerElementUI*>(g_pFrame->m_pm.FindControl((CA2W)achCtnName));
     if (pcContainer != NULL)
     {
-        pFrame->m_pList->Remove(pcContainer);
+        g_pFrame->m_pList->Remove(pcContainer);
     }
 }
 

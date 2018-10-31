@@ -5,7 +5,7 @@
 	<HorizontalLayout height="80">
 		<VerticalLayout>
 			<HorizontalLayout height="25">
-				<Edit name="EditIPAddr" text="127.0.0.1" bkcolor="FFF0F8FF" width="160"  height="25"/>
+				<Edit name="EditIPAddr" text="172.16.160.113" bkcolor="FFF0F8FF" width="160"  height="25"/>
 				<VerticalLayout width="80"/>
 				<Edit name="EditMsg" text="message box" bkcolor="FFF0F8FF" width="180"  height="25"/>
 			</HorizontalLayout>
@@ -31,7 +31,7 @@
 				<Button name="FileCclButton" text="取消发送" normalimage="OspDemoSkins\button_normal.png" hotimage="OspDemoSkins\button_hover.png" pushedimage="OspDemoSkins\button_pushed.png" width="80" height="25" />
 				<HorizontalLayout width="20"/>
 				<Option name="OptionDemo1" text="上传列表" width="80" height="25" normalimage="OspDemoSkins\tab_normal.bmp" hotimage="OspDemoSkins\tab_hot.bmp" pushedimage="OspDemoSkins\tab_select.bmp" group="tabDemo" selected="true" />
-				<Option name="OptionDemo2" text="完成列表" width="80" height="25" normalimage="OspDemoSkins\tab_normal.bmp" hotimage="OspDemoSkins\tab_hot.bmp" pushedimage="OspDemoSkins\tab_select.bmp" group="tabDemo" selected="true" />
+				<Option name="OptionDemo2" text="完成列表" width="80" height="25" normalimage="OspDemoSkins\tab_normal.bmp" hotimage="OspDemoSkins\tab_hot.bmp" pushedimage="OspDemoSkins\tab_select.bmp" group="tabDemo" />
 			</HorizontalLayout>
 			<!--Progress name="ProgressDemo1" text="Progress" width="200" height="20" foreimage="OspDemoSkins\progress_fore.png" min="0" max="100" value="0" hor="true" align="center" /-->
 			<TabLayout name="tabTest" height="140" bkcolor="#FFF0F8FF">

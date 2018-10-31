@@ -1,0 +1,11 @@
+*.exe
+*.exp
+*.ilk
+*.lib
+*.pdb
+*.obj
+*.tlog
+duilib/
+DuiStudy/
+win32_osp_client/Debug
+win32_osp_server/Debug

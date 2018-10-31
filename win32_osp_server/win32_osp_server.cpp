@@ -12,7 +12,7 @@ typedef zTemplate<CServerInstance, MAX_INS_NO> CDemoApp;
 CDemoApp g_cDemoApp;
 
 // 临时全局变量;
-CFrameWindowWnd *pFrame = NULL;
+CFrameWindowWnd *g_pFrame = NULL;
 //extern vector<CServerInstance*> g_pvcFilePstInsNo;
 
 extern TCHAR g_strFolderPath[MAX_PATH];
@@ -74,14 +74,19 @@ void CFrameWindowWnd::OnFinalMessage(HWND /*hWnd*/)
 // 发送按钮消息处理;
 void OnBnClickedPost(CEditUI* m_pEditPost)
 {
-    CDuiString cstrMsg = m_pEditPost->GetText();
     s8 achMsgGet[MAX_POST_MSG_LEN + 1] = {0};
+
+    CDuiString cstrMsg = m_pEditPost->GetText();
+    if (cstrMsg == _T(""))
+    {
+        return;
+    }
 
     // 获取窗口内容;
     ZeroMemory(achMsgGet, MAX_POST_MSG_LEN + 1);
     memcpy_s(achMsgGet, MAX_POST_MSG_LEN, (CW2A)cstrMsg.GetData(), strlen((CW2A)cstrMsg.GetData()));
 
-    // 客户端分配到一个空闲的instance， 负责消息互传任务;
+    // 服务端发送消息内容到客户端;
     OspPrintf(TRUE, FALSE, "Server start to send a message to client: %s, length = %d\n", achMsgGet, strlen(achMsgGet));
     OspPost(MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO), EVENT_MSG_POST, achMsgGet, strlen(achMsgGet),
         g_dwNodeNum, MAKEIID(DEMO_APP_SERVER_NO, INS_MSG_POST_NO), 0, DEMO_POST_TIMEOUT);
@@ -90,6 +95,7 @@ void OnBnClickedPost(CEditUI* m_pEditPost)
 // 配置按钮消息处理;
 void OnBnClickedConfig()
 {
+    WSADATA wsaData;
     u32 dwIpv4Addr = inet_addr("127.0.0.1");
     s8 achHost[MAX_POST_MSG_LEN + 1] = {0};
     u16 wTcpPort = 0;
@@ -97,14 +103,20 @@ void OnBnClickedConfig()
     s32 nIndex = 0;
 
     // 获取Ipv4Addr及TcpPort;
-#if 0
+    // 加载Winsock库;
+    if (::WSAStartup( MAKEWORD(2,0), &wsaData ))
+    {
+        OspPrintf(TRUE, FALSE, "WSAStartup Failed!!\r\n");
+        return;
+    }
+
     ::gethostname(achHost, MAX_POST_MSG_LEN);
     hostent *pHost = ::gethostbyname(achHost);
-    /*if (pHost == NULL)
+    if (pHost == NULL)
     {
         OspPrintf(TRUE, FALSE, "Get Host Content Failed!!\r\n");
         return;
-    }*/
+    }
 
     // 获取本机第一个IP地址;
     for (nIndex = 0;;nIndex++)
@@ -118,17 +130,15 @@ void OnBnClickedConfig()
     }
     
     dwIpv4Addr = inet_addr(::inet_ntoa(tAddr));
-#endif
-    // 获取窗口;
-    CEditUI *pcEditPort = pFrame->m_pEditPort;
-    if (pcEditPort == NULL)
-    {
-		OspPrintf(TRUE, FALSE, "Get CEditUI Failed!!\r\n");
-        return;
-    }
+    ::WSACleanup();
 
-    CDuiString cStrPort = pcEditPort->GetText();
-    wTcpPort = atoi((CW2A)cStrPort.GetData());
+    // 获取用户指定的TCP 端口号;
+    CEditUI *pcEditPort = g_pFrame->m_pEditPort;
+    if (pcEditPort)
+    {
+        CDuiString cStrPort = pcEditPort->GetText();
+        wTcpPort = atoi((CW2A)cStrPort.GetData());
+    }
 
     // OSP初始化
     OspInit(TRUE, 2510);
@@ -148,7 +158,7 @@ void OnBnClickedConfig()
     }
     else
     {
-		pFrame->m_pEditMsg->SetText(_T("OSP Init OK!"));
+		g_pFrame->m_pEditMsg->SetText(_T("OSP Init OK!"));
         OspPrintf(TRUE, FALSE, "服务器配置结果：SUCCESSFUL!! Socket Number:%d\r\n", sfd);
         //创建APP
         s32 nGreateRlt = g_cDemoApp.CreateApp("DemoServer", DEMO_APP_SERVER_NO, DEMO_APP_PRIO, DEMO_APP_QUE_SIZE); //APPID = 1
@@ -161,6 +171,7 @@ void OnBnClickedDisConnect()
 	if (OspDisconnectTcpNode(g_dwNodeNum) == true)
 	{
 		OspPrintf(TRUE, FALSE, "Disconnect TCP Node Successful!\r\n");
+        g_pFrame->m_pEditMsg->SetText(_T("DisConnect!!"));
 	}
 }
 
@@ -191,16 +202,12 @@ void OnBnClickedFilePos()
             lstrcat(g_strFolderPath, szFolderPath);
         }
 
-        // 获取窗口;
-        CEditUI *pcEditPort = pFrame->m_pEditFolderSel;
-        if (pcEditPort == NULL)
+        // 窗口反馈选中的文件路径信息;
+        CEditUI *pcEditPort = g_pFrame->m_pEditFolderSel;
+        if (pcEditPort)
         {
-            OspPrintf(TRUE, FALSE, "Get CEditUI Failed!!\r\n");
-            return;
+            pcEditPort->SetText(g_strFolderPath);
         }
-
-        // 赋值;
-        pcEditPort->SetText(g_strFolderPath);
     }
 
     if (lpidlBrowse != NULL)
@@ -287,15 +294,15 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
     CPaintManagerUI::SetInstance(hInstance);
     CPaintManagerUI::SetResourcePath(CPaintManagerUI::GetInstancePath());
  
-    pFrame = new CFrameWindowWnd();
-    if(pFrame == NULL)
+    g_pFrame = new CFrameWindowWnd();
+    if(g_pFrame == NULL)
     {
         return 0;
     }
 
-    pFrame->Create(NULL, _T("OspDemoServer"), UI_WNDSTYLE_FRAME, WS_EX_WINDOWEDGE);
-    pFrame->CenterWindow();
-    pFrame->ShowWindow(true);
+    g_pFrame->Create(NULL, _T("OspDemoServer"), UI_WNDSTYLE_FRAME, WS_EX_WINDOWEDGE);
+    g_pFrame->CenterWindow();
+    g_pFrame->ShowWindow(true);
     CPaintManagerUI::MessageLoop();
 
     return 0;

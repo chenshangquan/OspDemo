@@ -11,11 +11,11 @@ vector<CClientInstance*> g_pvcFilePstInsNo;
 
 TCHAR g_strFilePath[MAX_PATH] = _T("");
 TCHAR g_strFileName[MAX_FILE_NAME] = _T("");
-TCHAR g_strFolderPath[MAX_PATH] = _T("E:\\2");
+TCHAR g_strFolderPath[MAX_PATH] = _T("F:\\2");
 
 u32 g_dwNodeNum;
 
-extern CFrameWindowWnd *pFrame;
+extern CFrameWindowWnd *g_pFrame;
 extern BOOL IsIpFormatRight(LPCTSTR pIpAddr);
 extern u16 FindIndexByInsNo(u16 wInsNo);
 
@@ -245,7 +245,7 @@ void MsgPostFunc(CMessage *const pMsg)
 	}
 
     // 窗口赋值;
-    pFrame->m_pEditRecv->SetText(CA2W(pchMsgGet));
+    g_pFrame->m_pEditRecv->SetText(CA2W(pchMsgGet));
 
     // 释放空间;
     delete [] pchMsgGet;
@@ -257,7 +257,7 @@ void OspDisconnect(CMessage *const pMsg)
 {
     // 窗口赋值;
     OspPrintf(TRUE, FALSE, "DisConnect by app!!\r\n");
-    pFrame->m_pEditMsg->SetText(_T("DisConnect!!"));
+    g_pFrame->m_pEditMsg->SetText(_T("DisConnect!!"));
 }
 
 // 申请服务端分配文件发送instance回复;
@@ -351,7 +351,6 @@ void CClientInstance::InstanceEntry(CMessage *const pMsg)
     {
     case OSP_DISCONNECT:
         OspDisconnect(pMsg);
-        //NextState(IDLE_STATE);
     case EVENT_MSG_POST:
         MsgPostFunc(pMsg);
         //NextState(STATE_WORK);
@@ -359,11 +358,9 @@ void CClientInstance::InstanceEntry(CMessage *const pMsg)
         break;
 	case EVENT_SERVER_FILE_POST_INS_ALLOT_ACK:
 		ClientFilePostInsAllotAck(pMsg);
-        //NextState(STATE_WORK);
 		break;
     case EVENT_FILE_POST2C:
         OnClientReceive(pMsg);
-        //NextState(STATE_WORK);
         break;
 	case EVENT_CLIENT_FILE_POST_INS_RELEASE_BF:
 		CliFilePstInsRlsBf(pMsg);
@@ -456,7 +453,7 @@ void CClientInstance::ClientFilePostInsAllot(CMessage *const pcMsg, CApp* pcApp)
     pcIns->m_nCancel = 0;
 
     // 按钮无效;
-    pFrame->m_pBtnFilePost->SetName(_T("FilePstButton"));
+    g_pFrame->m_pBtnFilePost->SetName(_T("FilePstButton"));
     
     g_pvcFilePstInsNo.push_back(pcIns);
     OspPrintf(TRUE, FALSE, "Client: Get a idle instance, ID: %d, FileName: %s\r\n", pcIns->m_instId, pcIns->m_tFileInfo.strFileName);
@@ -540,7 +537,7 @@ void CClientInstance::ListUI2Paint()
 	s8 achBtnName[MAX_STR_LEN]  = {0};
 	s8 achPrgName[MAX_STR_LEN]  = {0};
 	//s8 achTmpName[MAX_FILE_NAME]  = {0};
-	CListUI* pcLoadList = pFrame->m_pList;
+	CListUI* pcLoadList = g_pFrame->m_pList;
 	if (pcLoadList == NULL)
 	{
 		return;
@@ -550,7 +547,7 @@ void CClientInstance::ListUI2Paint()
 	for (wListIndex = 0; wListIndex < g_pvcFilePstInsNo.size(); wListIndex++)
 	{
 		CDemoListContainerElementUI* pcListContainer = new CDemoListContainerElementUI;
-		pcListContainer->m_pHeader = pFrame->m_pListHeader;
+		pcListContainer->m_pHeader = g_pFrame->m_pListHeader;
 		CProgressUI* pcProgress = new CProgressUI;
 		CHorizontalLayoutUI* pcHorizontalLayout = new CHorizontalLayoutUI;
 		CButtonUI* pcButtonStt = new CButtonUI;
@@ -613,7 +610,7 @@ void CClientInstance::DoneListUI2Paint(CMessage *const pcMsg)
     s8 achProgress[MAX_FILE_NAME] = {0};
 
     CDemoListContainerElementUI* pcListContainer = new CDemoListContainerElementUI;
-    pcListContainer->m_pHeader = pFrame->m_pDoneListHeader;
+    pcListContainer->m_pHeader = g_pFrame->m_pDoneListHeader;
     CProgressUI* pcProgress = new CProgressUI;
     CTextUI* pcButtonDone = new CTextUI;
 
@@ -632,7 +629,7 @@ void CClientInstance::DoneListUI2Paint(CMessage *const pcMsg)
     pcButtonDone->ApplyAttributeList(_T("text=\"Done\" width=\"20\" height=\"20\""));
     pcListContainer->Add(pcButtonDone);
 
-    pFrame->m_pDoneList->Add(pcListContainer);
+    g_pFrame->m_pDoneList->Add(pcListContainer);
 
     return;
 }
@@ -677,7 +674,7 @@ void NormalProgressUI2Paint(CMessage *const pcMsg)
 	sprintf(achPrgName, "DemoProgress%u", wInsNo);
 
 	USES_CONVERSION;
-	CProgressUI* pcPrg = static_cast<CProgressUI*>(pFrame->m_pm.FindControl(A2W(achPrgName)));
+	CProgressUI* pcPrg = static_cast<CProgressUI*>(g_pFrame->m_pm.FindControl(A2W(achPrgName)));
 	if (pcPrg == NULL)
 	{
 		OspPrintf(TRUE, FALSE, "Can't find the progress control\r\n");
@@ -714,7 +711,7 @@ void LastProgressUI2Paint(CMessage *const pcMsg)
 	sprintf(achBtnNameB, "FileCclButton%u", wInsNo);
 
 	USES_CONVERSION;
-	CProgressUI* pcPrg = static_cast<CProgressUI*>(pFrame->m_pm.FindControl(A2W(achPrgName)));
+	CProgressUI* pcPrg = static_cast<CProgressUI*>(g_pFrame->m_pm.FindControl(A2W(achPrgName)));
 	if (pcPrg == NULL)
 	{
 		OspPrintf(TRUE, FALSE, "Can't find the progress control\r\n");
@@ -727,13 +724,13 @@ void LastProgressUI2Paint(CMessage *const pcMsg)
 	pcPrg->SetText(A2W(achProgress));
 
 	// 删除指定控件;
-	CListUI* pcLoadList = pFrame->m_pList;
+	CListUI* pcLoadList = g_pFrame->m_pList;
 	if (pcLoadList == NULL)
 	{
 		return;
 	}
 
-	CButtonUI* pcBtnCcl = static_cast<CButtonUI*>(pFrame->m_pm.FindControl(A2W(achBtnNameB)));
+	CButtonUI* pcBtnCcl = static_cast<CButtonUI*>(g_pFrame->m_pm.FindControl(A2W(achBtnNameB)));
 	pcLoadList->Remove(pcBtnCcl);
 	return;
 }
