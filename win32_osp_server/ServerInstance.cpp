@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "ServerInstance.h"
 #include "win32_osp_server.h"
+#include "print.h"
 
 /****************************************************
  *
@@ -69,13 +70,16 @@ u16 FindInsIndex(u16 wSerPostInsNo)
 // 断链消息处理;
 void OspDisconnect(CMessage *const pMsg)
 {
-	// 窗口赋值;
-	OspPrintf(TRUE, FALSE, "DisConnect by app!!\r\n");
-    //CDuiString strSrcNode(std::to_string(pMsg->srcnode));
-    CDuiString strSrcNode = _T("1");
+    s8 szSrcNode[MAX_STR_LEN]  = {0};
+
+	// 窗口提示信息;
+	PRINTMSG_TIME("DisConnect by app!!\r\n");
+    sprintf(szSrcNode, "%d", g_dwNodeNum);
+    CDuiString strSrcNode = (CA2W)szSrcNode;
     CDuiString strDisCnt(_T("DisCnt, NodeID:"));
     CDuiString strDisMsg = strDisCnt + strSrcNode;
 	g_pFrame->m_pEditMsg->SetText(strDisMsg);
+    g_pFrame->m_pm.DoCase(_T("caseDisCnt"));
 }
 
 // 消息接收处理函数;
@@ -95,11 +99,12 @@ void CServerInstance::MsgPostFunc(CMessage *const pMsg)
 
         // 连接成功窗口信息提示;
         g_pFrame->m_pEditMsg->SetText(_T("Connect Successful!"));
+        g_pFrame->m_pm.DoCase(_T("caseCnt"));
 
         // 设置断链检测参数;
-        if (OspSetHBParam(g_dwNodeNum, MAX_HB_TIMER, MAX_HB_NUM) != TRUE)
+        if (OspSetHBParam(g_dwNodeNum, HB_PERIOD, MAX_HB_NUM) != TRUE)
         {
-            OspPrintf(TRUE, FALSE, "OspSetHBParam Failed!\r\n");
+            PRINTMSG("OspSetHBParam Failed!\r\n");
             ::MessageBox(NULL, _T("OspSetHBParam Failed!"), _T("OspSetHBParam Result"), NULL);
         }
 
@@ -107,7 +112,7 @@ void CServerInstance::MsgPostFunc(CMessage *const pMsg)
         nErroNo = OspNodeDiscCBReg(g_dwNodeNum, DEMO_APP_SERVER_NO, INS_MSG_POST_NO);
         if ( nErroNo != OSP_OK)
         {
-            OspPrintf(TRUE, FALSE, "OspNodeDiscCBReg Failed, ErrorNo: %d!\r\n", nErroNo);
+            PRINTMSG("OspNodeDiscCBReg Failed, ErrorNo: %d!\r\n", nErroNo);
             ::MessageBox(NULL, _T("OspNodeDiscCBReg Failed!"), _T("OspNodeDiscCBReg Result"), NULL);
         }
         return;
@@ -117,7 +122,11 @@ void CServerInstance::MsgPostFunc(CMessage *const pMsg)
     pchMsgGet = new char[wMsgLen + 1];
     ZeroMemory(pchMsgGet, wMsgLen + 1);
     memcpy_s(pchMsgGet, wMsgLen, pMsg->content, wMsgLen);
-    OspPrintf(TRUE, FALSE, "message content is: %s, length is: %d.\n", pchMsgGet, wMsgLen);
+
+    if (CPrint::IsPrintCommunion())
+    {
+        PRINTMSG_TIME("message content is: %s, length is: %d.\n", pchMsgGet, wMsgLen);
+    }
 
     // 窗口赋值;
     CEditUI* pEditRecv =  g_pFrame->m_pEditRecv;
@@ -133,7 +142,10 @@ bool CServerInstance::StoreFilePacket(TFileMessage *strFileMsgGet)
 {
     DWORD nByte;
 
-    OspPrintf(TRUE, FALSE, "Server: Start to store the packet\r\n");
+    if (CPrint::IsPrintFileTR())
+    {
+        PRINTMSG_TIME("Server: Start to store the packet\r\n");
+    }
 
     // 记录本次偏移位置;
     m_nLastStart = strFileMsgGet->fileStart;
@@ -143,7 +155,7 @@ bool CServerInstance::StoreFilePacket(TFileMessage *strFileMsgGet)
     FlushFileBuffers(m_hFile);
     if (WriteFile(m_hFile, strFileMsgGet->filePacket, strFileMsgGet->fileSize, &nByte, NULL) == FALSE)
     {
-        OspPrintf(TRUE, FALSE, "Packet write to local failed\r\n");
+        PRINTMSG("Packet write to local failed\r\n");
         return FALSE;
     }
     FlushFileBuffers(m_hFile);
@@ -188,10 +200,13 @@ void CServerInstance::SendFilePacketEcho(s32 nFlag)    //向Client发送确认包，m_f
     strFileMsgAck.fileStart      = m_nLastStart;
     strFileMsgAck.fileSize       = m_nLastSize;
 
-    ZeroMemory(strFileMsgAck.filePacket, MAX_FILE_PACKET - 4 - 2*sizeof(s32));
+    ZeroMemory(strFileMsgAck.filePacket, FILE_PACKET_LEN - 4 - 2*sizeof(s32));
     BYTE* newPacket = (BYTE*)&strFileMsgAck;
 
-    OspPrintf(TRUE, FALSE, "Server: Response package.\r\n");
+    if (CPrint::IsPrintFileTR())
+    {
+        PRINTMSG_TIME("Server: Response package.\r\n");
+    }
     // 发送包到客户端
     OspPost(MAKEIID(DEMO_APP_CLIENT_NO, m_wCliInsNum), EVENT_FILE_POST2C,
         newPacket, (4 + 2*sizeof(s32)), m_dwNodeNum, MAKEIID(DEMO_APP_SERVER_NO, GetInsID()));
@@ -227,7 +242,7 @@ void CServerInstance::ReceiveFilePacket(TFileMessage *strFileMsgGet, CMessage *c
 			GENERIC_WRITE | GENERIC_READ, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 		if (m_hFile == INVALID_HANDLE_VALUE)
 		{
-			OspPrintf(TRUE, FALSE, "Server: CreateFile fail!\r\n");
+			PRINTMSG("Server: CreateFile fail!\r\n");
 		}
 
         // 初始列表信息绘制;
@@ -244,7 +259,7 @@ void CServerInstance::ReceiveFilePacket(TFileMessage *strFileMsgGet, CMessage *c
     {
         if (StoreFilePacket(strFileMsgGet) == TRUE)
         {
-            OspPrintf(TRUE, FALSE, "Server: End package.\r\n");
+            PRINTMSG_TIME("Server: End package.\r\n");
             SendFilePacketEcho(FILE_PACKET_END);
 
 			//FindClose(m_hFile);
@@ -256,7 +271,7 @@ void CServerInstance::ReceiveFilePacket(TFileMessage *strFileMsgGet, CMessage *c
             return;
         }
 
-        OspPrintf(TRUE, FALSE, "Server: Store file packet fail!\r\n");
+        PRINTMSG("Server: Store file packet fail!\r\n");
         SendFilePacketEcho(FILE_PACKET_ERROR);
         return;
     }
@@ -265,19 +280,23 @@ void CServerInstance::ReceiveFilePacket(TFileMessage *strFileMsgGet, CMessage *c
     {
         if (StoreFilePacket(strFileMsgGet) == TRUE)
         {
-            OspPrintf(TRUE, FALSE, "Server: Next package.\r\n");
+            if (CPrint::IsPrintFileTR())
+            {
+                PRINTMSG_TIME("Server: Next package.\r\n");
+            }
+
             SendFilePacketEcho(FILE_PACKET_OK);
 
             return;
         }
 
-        OspPrintf(TRUE, FALSE, "Server: Store file packet fail!\r\n");
+        PRINTMSG("Server: Store file packet fail!\r\n");
         SendFilePacketEcho(FILE_PACKET_ERROR);
         return;
     }
     else
     {
-        OspPrintf(TRUE, FALSE, "Server: Not current packet to save!\r\n");
+        PRINTMSG("Server: Not current packet to save!\r\n");
         SendFilePacketEcho(FILE_PACKET_ERROR);
     }
     return;
@@ -286,7 +305,11 @@ void CServerInstance::ReceiveFilePacket(TFileMessage *strFileMsgGet, CMessage *c
 // 包接收函数;
 void CServerInstance::OnServerReceive(CMessage *const pMsg)
 {
-    OspPrintf(TRUE, FALSE, "server receive the message from client\n");
+    if (CPrint::IsPrintFileTR())
+    {
+        PRINTMSG_TIME("server receive the message from client\n");
+    }
+
     // 获取收到的消息内容;
     u16 wMsgLen = pMsg->length;
     s8 *pchMsgGet = new char[wMsgLen + 1];
@@ -384,7 +407,7 @@ CServerInstance* GetIdleInsID(CApp* pcApp)
     // 当前没有空闲的instance;
     if (wIndex > MAX_INS_NO)
     {
-        OspPrintf(TRUE, FALSE, "Current have none idle instance.\r\n");
+        PRINTMSG("Current have none idle instance.\r\n");
         return 0;
     }
 
@@ -449,13 +472,12 @@ void CServerInstance::ServerFilePostInsAllot(CMessage *const pcMsg, CApp* pcApp)
 	pchMsgGet = new char[wMsgLen + 1];
 	ZeroMemory(pchMsgGet, wMsgLen + 1);
 	memcpy_s(pchMsgGet, wMsgLen, pcMsg->content, wMsgLen);
-	//OspPrintf(TRUE, FALSE, "message content is: %s, length is: %d.\n", pchMsgGet, wMsgLen);
 
 	// 获取空闲的instance指针;
 	CServerInstance *pcIns = GetIdleInsID(pcApp);
 	if (pcIns == 0)
 	{
-		OspPrintf(TRUE, FALSE, "Server:have none idle instance.\r\n");
+		PRINTMSG("Server:have none idle instance.\r\n");
 		return;
 	}
 

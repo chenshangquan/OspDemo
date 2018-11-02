@@ -1,11 +1,13 @@
 // win32_osp_server.cpp : Defines the entry point for the application.
 //
+#pragma once
 
 #include "stdafx.h"
 #include "win32_osp_client.h"
 #include "ClientInstance.h"
 #include <Shlobj.h>
 #include <shlwapi.h>
+#include "print.h"
 
 typedef zTemplate<CClientInstance, MAX_INS_NO> CDemoApp;
 CDemoApp g_cDemoApp;
@@ -77,7 +79,7 @@ u16 FindIndexByInsNo(u16 wInsNo)
     // 获取索引失败;
     if (wIndex == g_pvcFilePstInsNo.size())
     {
-        OspPrintf(TRUE, FALSE, "Find Index Failed.\r\n");
+        PRINTMSG("Find Index Failed.\r\n");
         return MAX_INS_NO;
     }
 
@@ -149,7 +151,7 @@ void OnBnClickedConnect()
     CEditUI *pcEditPort = g_pFrame->m_pEditPort;
     if (pcEditIPAddr == NULL || pcEditPort == NULL)
     {
-		OspPrintf(TRUE, FALSE, "Get CEditUI Failed!!\r\n");
+		PRINTMSG("Get CEditUI Failed!!\r\n");
         return;
     }
 
@@ -157,7 +159,7 @@ void OnBnClickedConnect()
     CDuiString cStrPort = pcEditPort->GetText();
     if (IsIpFormatRight(cStrIPAddr.GetData()) != TRUE)
     {
-		OspPrintf(TRUE, FALSE, "INVALID IPADDRESS!!\r\n");
+		PRINTMSG("INVALID IPADDRESS!!\r\n");
         ::MessageBox(NULL, _T("INVALID IPADDRESS"), _T("Config Result"), NULL);
         return;
     }
@@ -169,7 +171,11 @@ void OnBnClickedConnect()
     // OSP初始化;
     if (IsOspInitd() != TRUE)
     {
-        OspInit(TRUE, 2530);
+        if (!OspInit(TRUE, 2530))
+        {
+            PRINTMSG("OSP Initialized Failed!\r\n");
+            OspSetPrompt(DEF_TELNET_NAME);
+        }
     }
 
     // 创建监听结点;
@@ -180,7 +186,7 @@ void OnBnClickedConnect()
 
     if (INVALID_NODE == g_dwNodeNum)
     {
-        OspPrintf(TRUE, FALSE, "Connection Result:INVALID NODE\r\n");
+        PRINTMSG("Connection Result:INVALID NODE\r\n");
         ::MessageBox(NULL, _T("INVALID NODE"), _T("Connect Result"), NULL);
         return;
     }
@@ -188,13 +194,14 @@ void OnBnClickedConnect()
     {
         // 连接成功窗口信息提示;
         g_pFrame->m_pEditMsg->SetText(_T("Connect Successful!"));
+        g_pFrame->m_pm.DoCase(_T("caseCnt"));
 
-        OspPrintf(TRUE, FALSE, "Connect Result:SUCCESSFUL. Node Number:%d\r\n", g_dwNodeNum);
+        PRINTMSG_TIME("Connect Result:SUCCESSFUL. Node Number:%d\r\n", g_dwNodeNum);
 
         // 设置断链检测参数;
-        if (OspSetHBParam(g_dwNodeNum, MAX_HB_TIMER, MAX_HB_NUM) != TRUE)
+        if (OspSetHBParam(g_dwNodeNum, HB_PERIOD, MAX_HB_NUM) != TRUE)
         {
-            OspPrintf(TRUE, FALSE, "OspSetHBParam Failed!\r\n");
+            PRINTMSG("OspSetHBParam Failed!\r\n");
             ::MessageBox(NULL, _T("OspSetHBParam Failed!"), _T("OspSetHBParam Result"), NULL);
         }
 
@@ -202,7 +209,7 @@ void OnBnClickedConnect()
         nErroNo = OspNodeDiscCBReg(g_dwNodeNum, DEMO_APP_CLIENT_NO, INS_MSG_POST_NO);
         if ( nErroNo != OSP_OK)
         {
-            OspPrintf(TRUE, FALSE, "OspNodeDiscCBReg Failed, ErrorNo: %d!\r\n", nErroNo);
+            PRINTMSG("OspNodeDiscCBReg Failed, ErrorNo: %d!\r\n", nErroNo);
             ::MessageBox(NULL, _T("OspNodeDiscCBReg Failed!"), _T("OspNodeDiscCBReg Result"), NULL);
         }
 
@@ -224,8 +231,9 @@ void OnBnClickedDisConnect()
 {
     if (OspDisconnectTcpNode(g_dwNodeNum))
     {
-        OspPrintf(TRUE, FALSE, "Disconnect TCP Node Successful!\r\n");
+        PRINTMSG_TIME("Disconnect TCP Node Successful!\r\n");
         g_pFrame->m_pEditMsg->SetText(_T("DisConnect!!"));
+        g_pFrame->m_pm.DoCase(_T("caseDisCnt"));
     }
 }
 
@@ -234,6 +242,7 @@ void OnBnClickedPost(CEditUI* m_pEditPost)
 {
     s8 achMsgGet[MAX_POST_MSG_LEN + 1] = {0};
 
+    // 空消息内容不发送;
     CDuiString cstrMsg = m_pEditPost->GetText();
     if (cstrMsg == _T(""))
     {
@@ -245,7 +254,11 @@ void OnBnClickedPost(CEditUI* m_pEditPost)
     memcpy_s(achMsgGet, MAX_POST_MSG_LEN, (CW2A)cstrMsg.GetData(), strlen((CW2A)cstrMsg.GetData()));
 
     // 客户端发送消息内容到服务端;
-    OspPrintf(TRUE, FALSE, "Client start to send a message to server: %s , length = %d\n", achMsgGet, strlen(achMsgGet));
+    if (CPrint::IsPrintCommunion())
+    {
+        PRINTMSG_TIME("Client start to send a message to server: %s , length = %d\n", achMsgGet, strlen(achMsgGet));
+    }
+
 	OspPost(MAKEIID(DEMO_APP_SERVER_NO, INS_MSG_POST_NO), EVENT_MSG_POST, achMsgGet, strlen(achMsgGet),
 		g_dwNodeNum, MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO), 0, DEMO_POST_TIMEOUT);
 }
@@ -289,20 +302,17 @@ void OnBnClickedFileSel()
             pcEditFileSel->SetText(szBuf);
         }
 
-        OspPrintf(TRUE, FALSE, "Get FilePath: %s\r\n", (CW2A)szBuf);
+        PRINTMSG("Get FilePath: %s\r\n", (CW2A)szBuf);
 
         // 获取文件名称;
         ZeroMemory(g_strFileName, MAX_FILE_NAME);
         lstrcat(g_strFileName, PathFindFileName(szBuf));
 
-        // 输出文件名;
-        OspPrintf(TRUE, FALSE, "Get FileName: %s\r\n", (CW2A)g_strFileName);
-
 		// 文件信息收集;
 		HANDLE mFileR = CreateFile(g_strFilePath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 		if (mFileR == INVALID_HANDLE_VALUE)
 		{
-			OspPrintf(TRUE, FALSE, "Client: CreateFile fail!\r\n");
+			PRINTMSG("Client: CreateFile fail!\r\n");
 			return;
 		}
 
@@ -313,7 +323,7 @@ void OnBnClickedFileSel()
 		//__int64 nFileSize = ((__int64)dwHigh << 32) + dwSize;//对于大文件需要将高32位和低32位拼接成64位整形;
 		//g_pvcFilePstInsNo[]
 		tFileInfo.fileLength = dwSize;
-		tFileInfo.filePacketNum = dwSize/(MAX_FILE_PACKET - 4 - 2*sizeof(s32)) + 1;
+		tFileInfo.filePacketNum = dwSize/(FILE_PACKET_LEN - 4 - 2*sizeof(s32)) + 1;
 		ZeroMemory(tFileInfo.strFileName, MAX_FILE_NAME + 1);
 		memcpy_s(tFileInfo.strFileName, MAX_FILE_NAME, (CW2A)g_strFileName, strlen((CW2A)g_strFileName));
 
@@ -425,7 +435,7 @@ void OnBnClickedFileStt(u16 wInsNo)
 	wIndex = FindIndexByInsNo(wInsNo);
 	if (wIndex == MAX_INS_NO)
 	{
-		OspPrintf(TRUE, FALSE, "Index Error.\r\n");
+		PRINTMSG("Index Error.\r\n");
 		return;
 	}
 
@@ -459,7 +469,7 @@ void OnBnClickedFileStp(u16 wInsNo)
 	wIndex = FindIndexByInsNo(wInsNo);
 	if (wIndex == MAX_INS_NO)
 	{
-		OspPrintf(TRUE, FALSE, "Index Error.\r\n");
+		PRINTMSG("Index Error.\r\n");
         return;
     }
 
@@ -490,7 +500,7 @@ void OnBnClickedFileCcl(u16 wInsNo)
 	wIndex = FindIndexByInsNo(wInsNo);
 	if (wIndex == MAX_INS_NO)
 	{
-		OspPrintf(TRUE, FALSE, "Index Error.\r\n");
+		PRINTMSG("Index Error.\r\n");
 		return;
 	}
 	
@@ -750,4 +760,27 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 
     //delete pFrame;
     return 0;
+}
+
+API void help()
+{
+    OspPrintf(TRUE,FALSE,"\nprt nLevel:打印级别为nLevel的消息；消息级别 0-4，\n \
+                         0为关闭打印\n \
+                         1为打印一般提示消息，默认输入prt即为关闭打印\n \
+                         2为打印通讯消息\n \
+                         3为打印文件发送消息\n \
+                         4为打印所有消息");
+    OspPrintf(TRUE,FALSE,"\nshowdev:显示hid设备信息");
+    OspPrintf(TRUE,FALSE,"\nshowsize:显示Datalist大小");
+    OspPrintf(TRUE,FALSE,"\nshowver:显示版本号");
+    OspPrintf(TRUE,FALSE,"\nmdver:显示媒控库版本号");
+    OspPrintf(TRUE,FALSE,"\ndatastatus:显示数据是否阻塞");
+    OspPrintf(TRUE,FALSE,"\ncpuadjust:是否启用CPU动态调整");
+    OspPrintf(TRUE,FALSE,"\nscreen byScreen:选择屏幕,从1开始\n");
+}
+
+API void prt( u8 byLevel )
+{
+    CPrint::Print( byLevel );
+    OspPrintf(TRUE,FALSE,"\nbyLevel:%d", byLevel);
 }

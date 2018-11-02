@@ -1,7 +1,6 @@
 #pragma once
 #include "../duilib/Utils/WinImplBase.h"
-#include "../osplib/include/kdvtype.h"
-#include "../osplib/include/osp.h"
+#include "osp.h"
 
 class CFilePostOptDlg :
     public WindowImplBase

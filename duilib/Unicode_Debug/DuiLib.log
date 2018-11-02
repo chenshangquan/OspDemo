@@ -1,11 +1,13 @@
-﻿Build started 2018/8/2 14:19:06.
-     1>Project "C:\Users\csquan\Documents\Visual Studio 2010\Projects\mfc_osp_server\duilib\DuiLib.vcxproj" on node 2 (build target(s)).
-     1>InitializeBuildStatus:
+﻿Build started 2018/8/28 14:51:54.
+     1>Project "F:\Projects\OspDemo\duilib\DuiLib.vcxproj" on node 3 (build target(s)).
+     1>PrepareForBuild:
+         Creating directory "..\..\10-common\lib\debug\win32_2010\".
+       InitializeBuildStatus:
          Creating "Unicode_Debug\DuiLib.unsuccessfulbuild" because "AlwaysCreate" was specified.
        ClCompile:
          C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /Zi /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D UILIB_STATIC /D _VC80_UPGRADE=0x0600 /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yc"stdafx.h" /Fp"Unicode_Debug\DuiLib.pch" /Fo"Unicode_Debug\\" /Fd"Unicode_Debug\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt StdAfx.cpp
          StdAfx.cpp
-     1>c:\users\csquan\documents\visual studio 2010\projects\mfc_osp_server\duilib\UIlib.h(30): warning C4005: 'UILIB_STATIC' : macro redefinition
+     1>f:\projects\ospdemo\duilib\UIlib.h(30): warning C4005: 'UILIB_STATIC' : macro redefinition
                  command-line arguments :  see previous definition of 'UILIB_STATIC'
          C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /Zi /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D UILIB_STATIC /D _VC80_UPGRADE=0x0600 /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yu"stdafx.h" /Fp"Unicode_Debug\DuiLib.pch" /Fo"Unicode_Debug\\" /Fd"Unicode_Debug\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt Control\UIGif.cpp Control\UILetterIndex.cpp Control\UITouchList.cpp Core\caseManager.cpp DuiDrag\DragController.cpp DuiDrag\DragDataMgr.cpp DuiDrag\DragInterface.cpp DuiDrag\DuiDrag.cpp DuiDrag\UIDragWnd.cpp Layout\UISlideTabLayout.cpp UIlib.cpp Utils\GifImage.cpp Utils\WinImplBase.cpp Utils\UIDelegate.cpp Utils\Utils.cpp Core\UIBase.cpp Core\UIContainer.cpp Core\UIControl.cpp Core\UIDlgBuilder.cpp Core\UIManager.cpp Core\UIMarkup.cpp Core\UIRender.cpp Layout\UIChildLayout.cpp Layout\UIHorizontalLayout.cpp Layout\UITabLayout.cpp Layout\UITileLayout.cpp Layout\UIVerticalLayout.cpp Control\UIActiveX.cpp Control\UIButton.cpp Control\UICheckBox.cpp Control\UICombo.cpp Control\UIComboBox.cpp Control\UIDateTime.cpp Control\UIEdit.cpp Control\UILabel.cpp Control\UIList.cpp Control\UIOption.cpp Control\UIProgress.cpp Control\UIRichEdit.cpp Control\UIScrollBar.cpp Control\UISlider.cpp Control\UIText.cpp Control\UITreeView.cpp Control\UIWebBrowser.cpp
          UIWebBrowser.cpp
@@ -162,12 +164,12 @@
          Unicode_Debug\UIText.obj
          Unicode_Debug\UITreeView.obj
          Unicode_Debug\UIWebBrowser.obj
-         DuiLib.vcxproj -> C:\Users\csquan\Documents\Visual Studio 2010\Projects\mfc_osp_server\duilib\..\..\10-common\lib\debug\win32_2010\DuiLib_u.lib
+         DuiLib.vcxproj -> F:\Projects\OspDemo\duilib\..\..\10-common\lib\debug\win32_2010\DuiLib_u.lib
        FinalizeBuildStatus:
          Deleting file "Unicode_Debug\DuiLib.unsuccessfulbuild".
          Touching "Unicode_Debug\DuiLib.lastbuildstate".
-     1>Done Building Project "C:\Users\csquan\Documents\Visual Studio 2010\Projects\mfc_osp_server\duilib\DuiLib.vcxproj" (build target(s)).
+     1>Done Building Project "F:\Projects\OspDemo\duilib\DuiLib.vcxproj" (build target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:05.73
+Time Elapsed 00:00:04.27

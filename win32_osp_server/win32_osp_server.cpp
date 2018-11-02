@@ -1,12 +1,12 @@
 // win32_osp_server.cpp : Defines the entry point for the application.
 //
 
-
 #include "stdafx.h"
 #include "win32_osp_server.h"
 #include "ServerInstance.h"
 #include <Shlobj.h>
 #include <shlwapi.h>
+#include "print.h"
 
 typedef zTemplate<CServerInstance, MAX_INS_NO> CDemoApp;
 CDemoApp g_cDemoApp;
@@ -87,7 +87,11 @@ void OnBnClickedPost(CEditUI* m_pEditPost)
     memcpy_s(achMsgGet, MAX_POST_MSG_LEN, (CW2A)cstrMsg.GetData(), strlen((CW2A)cstrMsg.GetData()));
 
     // 服务端发送消息内容到客户端;
-    OspPrintf(TRUE, FALSE, "Server start to send a message to client: %s, length = %d\n", achMsgGet, strlen(achMsgGet));
+    if (CPrint::IsPrintCommunion())
+    {
+        PRINTMSG_TIME("Server start to send a message to client: %s, length = %d\n", achMsgGet, strlen(achMsgGet));
+    }
+
     OspPost(MAKEIID(DEMO_APP_CLIENT_NO, INS_MSG_POST_NO), EVENT_MSG_POST, achMsgGet, strlen(achMsgGet),
         g_dwNodeNum, MAKEIID(DEMO_APP_SERVER_NO, INS_MSG_POST_NO), 0, DEMO_POST_TIMEOUT);
 }
@@ -106,7 +110,7 @@ void OnBnClickedConfig()
     // 加载Winsock库;
     if (::WSAStartup( MAKEWORD(2,0), &wsaData ))
     {
-        OspPrintf(TRUE, FALSE, "WSAStartup Failed!!\r\n");
+        PRINTMSG("WSAStartup Failed!!\r\n");
         return;
     }
 
@@ -114,7 +118,7 @@ void OnBnClickedConfig()
     hostent *pHost = ::gethostbyname(achHost);
     if (pHost == NULL)
     {
-        OspPrintf(TRUE, FALSE, "Get Host Content Failed!!\r\n");
+        PRINTMSG("Get Host Content Failed!!\r\n");
         return;
     }
 
@@ -140,26 +144,28 @@ void OnBnClickedConfig()
         wTcpPort = atoi((CW2A)cStrPort.GetData());
     }
 
-    // OSP初始化
-    OspInit(TRUE, 2510);
-    // OSP初始化结果查询
-    if (IsOspInitd() == FALSE)
+    // OSP初始化;
+    if (!IsOspInitd())
     {
-        OspPrintf(TRUE, FALSE, "OSP Init Failed!!");
+        if (!OspInit(TRUE, 2530))
+        {
+            PRINTMSG("OSP Initialized Failed!\r\n");
+            OspSetPrompt(DEF_TELNET_NAME);
+        }
     }
 
     // 创建一个TCP结点 //本地监听结点;
     s32 sfd = OspCreateTcpNode(dwIpv4Addr, wTcpPort);
     if (INVALID_SOCKET == sfd)
     {
-        OspPrintf(TRUE, FALSE, "INVALID SOCKET\r\n");
+        PRINTMSG("INVALID SOCKET\r\n");
         ::MessageBox(NULL, _T("INVALID SOCKET!!"), _T("服务器配置结果"), NULL);
         return;
     }
     else
     {
 		g_pFrame->m_pEditMsg->SetText(_T("OSP Init OK!"));
-        OspPrintf(TRUE, FALSE, "服务器配置结果：SUCCESSFUL!! Socket Number:%d\r\n", sfd);
+        PRINTMSG("Create TCP Node：SUCCESSFUL!! Socket Number:%d\r\n", sfd);
         //创建APP
         s32 nGreateRlt = g_cDemoApp.CreateApp("DemoServer", DEMO_APP_SERVER_NO, DEMO_APP_PRIO, DEMO_APP_QUE_SIZE); //APPID = 1
     }
@@ -170,8 +176,9 @@ void OnBnClickedDisConnect()
 {
 	if (OspDisconnectTcpNode(g_dwNodeNum) == true)
 	{
-		OspPrintf(TRUE, FALSE, "Disconnect TCP Node Successful!\r\n");
+		PRINTMSG_TIME("Disconnect TCP Node Successful!\r\n");
         g_pFrame->m_pEditMsg->SetText(_T("DisConnect!!"));
+        g_pFrame->m_pm.DoCase(_T("caseDisCnt"));
 	}
 }
 
@@ -306,4 +313,27 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
     CPaintManagerUI::MessageLoop();
 
     return 0;
+}
+
+API void help()
+{
+    OspPrintf(TRUE,FALSE,"\nprt nLevel:打印级别为nLevel的消息；消息级别 0-4，\n \
+                         0为关闭打印\n \
+                         1为打印一般提示消息，默认输入prt即为关闭打印\n \
+                         2为打印通讯消息\n \
+                         3为打印文件发送消息\n \
+                         4为打印所有消息");
+    OspPrintf(TRUE,FALSE,"\nshowdev:显示hid设备信息");
+    OspPrintf(TRUE,FALSE,"\nshowsize:显示Datalist大小");
+    OspPrintf(TRUE,FALSE,"\nshowver:显示版本号");
+    OspPrintf(TRUE,FALSE,"\nmdver:显示媒控库版本号");
+    OspPrintf(TRUE,FALSE,"\ndatastatus:显示数据是否阻塞");
+    OspPrintf(TRUE,FALSE,"\ncpuadjust:是否启用CPU动态调整");
+    OspPrintf(TRUE,FALSE,"\nscreen byScreen:选择屏幕,从1开始\n");
+}
+
+API void prt( u8 byLevel )
+{
+    CPrint::Print( byLevel );
+    OspPrintf(TRUE,FALSE,"\nbyLevel:%d", byLevel);
 }

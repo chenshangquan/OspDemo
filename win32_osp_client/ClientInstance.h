@@ -1,10 +1,8 @@
 #pragma once
 
-#include "../osplib/include/kdvtype.h"
-#include "../osplib/include/osp.h"
-#include "../include/ospdemo_com.h"
+#include "ospdemo_com.h"
 
-#define MAX_INS_NO 10
+#define MAX_INS_NO 10  
 
 class CClientInstance :
     public CInstance

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Window mininfo="450,500" size="500,700">
-  <Font name="幼圆" size="16" default="true" />
+<Font name="幼圆" size="15" default="true" />
   <VerticalLayout bkcolor="#FF7B68EE">
 	<HorizontalLayout height="50">
 		<VerticalLayout>
@@ -8,7 +8,7 @@
 				<Edit name="EditPort" text="6682" width="80" height="25" bkcolor="FFF0F8FF" />
 				<Button name="ConfigButton" text="配置按钮" width="80" height="25" normalimage="OspDemoSkins\button_normal.png" hotimage="OspDemoSkins\button_hover.png" pushedimage="OspDemoSkins\button_pushed.png" />
 				<Button name="DisCntButton" text="断连按钮" width="80" height="25" normalimage="OspDemoSkins\button_normal.png" hotimage="OspDemoSkins\button_hover.png" pushedimage="OspDemoSkins\button_pushed.png" />
-				<Edit name="EditMsg" text="message box" bkcolor="FFF0F8FF" width="160"  height="25"/>
+				<Edit name="EditMsg" text="message box" bkcolor="FFF0F8FF" width="180" height="25" readonly="true"/>
 			</HorizontalLayout>
 			<HorizontalLayout />
 		</VerticalLayout>
@@ -17,8 +17,8 @@
 	<HorizontalLayout height="250">
 		<VerticalLayout>
 			<HorizontalLayout height="50">
-				<Edit name="EditFolderSel" height="25" text="" maxwidth="160" bkcolor="FFF0F8FF" />
-				<Button name="RecvPosButton" height="25" text="存储选择" maxwidth="80" normalimage="OspDemoSkins\button_normal.png" hotimage="OspDemoSkins\button_hover.png" pushedimage="OspDemoSkins\button_pushed.png" />
+				<Edit name="EditFolderSel" text="F:\2" width="160" height="25" bkcolor="FFF0F8FF" readonly="true"/>
+				<Button name="RecvPosButton" height="25" text="存储选择" maxwidth="80" normalimage="OspDemoSkins\button_normal.png" hotimage="OspDemoSkins\button_hover.png" pushedimage="OspDemoSkins\button_pushed.png" enabled="false"/>
 			</HorizontalLayout>
 			
 			<HorizontalLayout height="25">
@@ -39,15 +39,24 @@
 		</VerticalLayout>
 	</HorizontalLayout>
 	
-	<RichEdit name="EditRecv" bordercolor="#FF000000" bordersize="0" borderround="18,18" inset="4,2,4,2" bkcolor="#FF87CEEB" bkcolor2="#FFF0F8FF" bkcolor3="#FF87CEFA" font="1" multiline="true" vscrollbar="true" autovscroll="true" enabled="true" rich="true" readonly="false" text="<内容显示>">
-	</RichEdit>
-	<Edit name="EditPost" height="50" bordercolor="#FF0000" bordersize="0" borderround="18,18" inset="4,2,4,2" bkcolor="#FF87CEEB" bkcolor2="#FFF0F8FF" bkcolor3="#FFF0F8FF" font="1" multiline="true" vscrollbar="true" autovscroll="true" enabled="true" rich="true" readonly="false" text="<输入待发送的消息内容...>">
-	</Edit>
+	<RichEdit name="EditRecv" text="<内容显示>" bordersize="0" borderround="18,18" inset="4,2,4,2" bkcolor="#FF87CEEB" bkcolor2="#FFF0F8FF" bkcolor3="#FF87CEFA" font="0" multiline="true" vscrollbar="true" autovscroll="true" readonly="true" />
+	<Edit name="EditPost" text="<等待客户端连接...>" height="50" bordersize="0" borderround="18,18" inset="4,2,4,2" bkcolor="#FF87CEEB" bkcolor2="#FFF0F8FF" bkcolor3="#FFF0F8FF" font="0" multiline="true" vscrollbar="true" autovscroll="true" enabled="false"/>
 	
 	<HorizontalLayout height="30">
 		<Button name="PostButton" height="25" text="发送" maxwidth="80" normalimage="OspDemoSkins\button_normal.png" hotimage="OspDemoSkins\button_hover.png" pushedimage="OspDemoSkins\button_pushed.png" />
 		<HorizontalLayout />
 		<Button name="CloseButton" height="25" text="退出" maxwidth="80" normalimage="OspDemoSkins\button_normal.png" hotimage="OspDemoSkins\button_hover.png" pushedimage="OspDemoSkins\button_pushed.png" />
 	</HorizontalLayout>
+	
+	<Case name="caseCnt">			<!--连接-->
+		<RecvPosButton enabled="true"/>
+		<EditPost text="<输入待发送的消息内容...>" enabled="true"/>
+		<PostButton enabled="true"/>
+	</Case>
+	<Case name="caseDisCnt">		<!--未连接-->
+		<RecvPosButton enabled="false"/>
+		<EditPost text="<等待客户端连接...>" enabled="false"/>
+		<PostButton enabled="false"/>
+	</Case>
   </VerticalLayout>
 </Window>

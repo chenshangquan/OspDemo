@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "ClientInstance.h"
 #include "win32_osp_client.h"
+#include "print.h"
 
 /****************************************************
  *
@@ -33,13 +34,13 @@ CClientInstance::~CClientInstance(void)
 // 包发送处理函数;
 void CClientInstance::SendFileInfo(s32 fStart,s32 fSize,char *fHead)
 {
-    BYTE m_sendBuffer[MAX_FILE_PACKET + 1] = {0};   // 待传送数据buffer;
+    BYTE m_sendBuffer[FILE_PACKET_LEN + 1] = {0};   // 待传送数据buffer;
 	DWORD nByte;
 
     // 文件传输进度数值;
     m_dnProgValve = 100 * m_dwPktIndex / m_tFileInfo.filePacketNum;
 
-    u32 dwFilePacketBuff = MAX_FILE_PACKET - 4 - 2*sizeof(s32);
+    u32 dwFilePacketBuff = FILE_PACKET_LEN - 4 - 2*sizeof(s32);
 
     TFileMessage strFileMsg;
     // 定义用于发送文件数据的文件包，fileHead定义为“FFF”;
@@ -51,8 +52,8 @@ void CClientInstance::SendFileInfo(s32 fStart,s32 fSize,char *fHead)
     // 初始化;
     strFileMsg.fileStart   = 0;
     strFileMsg.fileSize    = 0;
-	ZeroMemory(m_sendBuffer, sizeof(BYTE)*(MAX_FILE_PACKET) + 1);
-	ZeroMemory(strFileMsg.filePacket, sizeof(BYTE)*(MAX_FILE_PACKET) - 4 - 2*sizeof(s32));
+	ZeroMemory(m_sendBuffer, sizeof(BYTE)*(FILE_PACKET_LEN) + 1);
+	ZeroMemory(strFileMsg.filePacket, sizeof(BYTE)*(FILE_PACKET_LEN) - 4 - 2*sizeof(s32));
 
 	// 暂停发送;  // 保留当前发包位置;
 	if (m_nPuase != 0)
@@ -66,7 +67,8 @@ void CClientInstance::SendFileInfo(s32 fStart,s32 fSize,char *fHead)
         // 最后一个包发送完成;
         if (!strcmp(fHead, "END"))
         {
-            OspPrintf(TRUE, FALSE, "Enter END.\r\n");
+            PRINTMSG_TIME("END.\r\n");
+
 			//FindClose(m_hFile);
 			CloseHandle(m_hFile);
 
@@ -93,7 +95,10 @@ void CClientInstance::SendFileInfo(s32 fStart,s32 fSize,char *fHead)
                 strFileMsg.fileSize  = m_tFileInfo.fileLength;
                 m_nLastStart = 0;
                 m_nLastSize  = m_tFileInfo.fileLength;
-                OspPrintf(TRUE, FALSE, "Only one packet. Index(%d)\r\n", m_dwPktIndex);
+                if (CPrint::IsPrintFileTR())
+                {
+                    PRINTMSG_TIME("Only one packet. Index(%d)\r\n", m_dwPktIndex);
+                }
             }
             else
             {
@@ -101,7 +106,10 @@ void CClientInstance::SendFileInfo(s32 fStart,s32 fSize,char *fHead)
                 strFileMsg.fileSize  = dwFilePacketBuff;
                 m_nLastStart = 0;
                 m_nLastSize  = dwFilePacketBuff;
-                OspPrintf(TRUE, FALSE, "First packet. Index(%d)\r\n", m_dwPktIndex);
+                if (CPrint::IsPrintFileTR())
+                {
+                    PRINTMSG_TIME("First packet. Index(%d)\r\n", m_dwPktIndex);
+                }
             }
 
 			// 发送第一个包时，给自己发送消息并进行进度条的绘制;
@@ -124,7 +132,10 @@ void CClientInstance::SendFileInfo(s32 fStart,s32 fSize,char *fHead)
                 strFileMsg.fileSize  = m_tFileInfo.fileLength - strFileMsg.fileStart;
                 m_nLastStart = strFileMsg.fileStart;
                 m_nLastSize  = strFileMsg.fileSize;
-                OspPrintf(TRUE, FALSE, "Last packet. Index(%d)\r\n",  m_dwPktIndex);
+                if (CPrint::IsPrintFileTR())
+                {
+                    PRINTMSG_TIME("Last packet. Index(%d)\r\n",  m_dwPktIndex);
+                }
             }
             else
             {
@@ -132,7 +143,10 @@ void CClientInstance::SendFileInfo(s32 fStart,s32 fSize,char *fHead)
                 strFileMsg.fileSize  = dwFilePacketBuff;
                 m_nLastStart = strFileMsg.fileStart;
                 m_nLastSize  = strFileMsg.fileSize;
-                OspPrintf(TRUE, FALSE, "Next packet. Index(%d)\r\n",  m_dwPktIndex);
+                if (CPrint::IsPrintFileTR())
+                {
+                    PRINTMSG_TIME("Next packet. Index(%d)\r\n",  m_dwPktIndex);
+                }
             }
 
 			// 后续正常包传送时，给自己发送消息并进行进度条的绘制;
@@ -142,7 +156,11 @@ void CClientInstance::SendFileInfo(s32 fStart,s32 fSize,char *fHead)
         // 确认包表示接收到的包有错误，则重新发送上一个包;
         else if (!strcmp(fHead, "ERR"))   
         {
-            OspPrintf(TRUE, FALSE, "Error packet. Index(%d)\r\n",  m_dwPktIndex);
+            if (CPrint::IsPrintFileTR())
+            {
+                PRINTMSG_TIME("Error packet. Index(%d)\r\n",  m_dwPktIndex);
+            }
+
             m_nErrorPktNum++;
             strFileMsg.fileStart = m_nLastStart;
             strFileMsg.fileSize  = m_nLastSize;
@@ -150,7 +168,8 @@ void CClientInstance::SendFileInfo(s32 fStart,s32 fSize,char *fHead)
         // 确认包表示用户取消了文件传输;
         else if (!strcmp(fHead, "CCL"))
         {
-            OspPrintf(TRUE, FALSE, "Cancel the packet send.\r\n");
+            PRINTMSG_TIME("Cancel the packet send.\r\n");
+
 			// 释放句柄;
 			//FindClose(m_hFile);
 			CloseHandle(m_hFile);
@@ -163,13 +182,18 @@ void CClientInstance::SendFileInfo(s32 fStart,s32 fSize,char *fHead)
         // 暂停包表示用户停止文件传送;
         else if (!strcmp(fHead, "STP"))
         {
-            OspPrintf(TRUE, FALSE, "Stop the packet send.\r\n\r\n\r\n");
+            PRINTMSG_TIME("Stop the packet send.\r\n\r\n\r\n");
+
             Sleep(1);
         }
         // 接收到的信息不正常时默认出错，重新发送上一个包;
         else
         {
-            OspPrintf(TRUE, FALSE, "Repeat the previous packet. Index(%d)\r\n",  m_dwPktIndex);
+            if (CPrint::IsPrintFileTR())
+            {
+                PRINTMSG_TIME("Repeat the previous packet. Index(%d)\r\n",  m_dwPktIndex);
+            }
+
             m_nErrorPktNum++;
             strFileMsg.fileStart = m_nLastStart;
             strFileMsg.fileSize  = m_nLastSize;
@@ -178,7 +202,11 @@ void CClientInstance::SendFileInfo(s32 fStart,s32 fSize,char *fHead)
     // 接收到的信息不正常时默认出错，重新发送上一个包;
     else 
     {
-        OspPrintf(TRUE, FALSE, "Other error, Repeat the previous packet. Index(%d)\r\n", m_dwPktIndex);
+        if (CPrint::IsPrintFileTR())
+        {
+            PRINTMSG_TIME("Other error, Repeat the previous packet. Index(%d)\r\n", m_dwPktIndex);
+        }
+
         m_nErrorPktNum++;
         strFileMsg.fileStart = m_nLastStart;
         strFileMsg.fileSize  = m_nLastSize;
@@ -218,7 +246,10 @@ void CClientInstance::SendFileInfo(s32 fStart,s32 fSize,char *fHead)
     // 将待发送包的内容填充至发送缓存区;
     memcpy(m_sendBuffer, filePacket, strFileMsg.fileSize + 4 + 2*sizeof(s32));
 
-    OspPrintf(TRUE, FALSE, "Start to post the file message to server. SerInsNo:%d\r\n", m_wSerInsNum);
+    if (CPrint::IsPrintFileTR())
+    {
+        PRINTMSG_TIME("Start to post the file message to server. SerInsNo:%d\r\n", m_wSerInsNum);
+    }
 
     // 发送包到服务端;
     OspPost(MAKEIID(DEMO_APP_SERVER_NO, m_wSerInsNum), EVENT_FILE_POST2S, m_sendBuffer,
@@ -237,7 +268,11 @@ void MsgPostFunc(CMessage *const pMsg)
     pchMsgGet = new char[wMsgLen + 1];
     ZeroMemory(pchMsgGet, wMsgLen + 1);
     memcpy_s(pchMsgGet, wMsgLen, pMsg->content, wMsgLen);
-    OspPrintf(TRUE, FALSE, "message content is: %s, length is: %d.\n", pchMsgGet, wMsgLen);
+
+    if (CPrint::IsPrintCommunion())
+    {
+        PRINTMSG_TIME("message content is: %s, length is: %d.\n", pchMsgGet, wMsgLen);
+    }
 
 	if (pMsg->event == OSP_DISCONNECT)
 	{
@@ -256,8 +291,9 @@ void MsgPostFunc(CMessage *const pMsg)
 void OspDisconnect(CMessage *const pMsg)
 {
     // 窗口赋值;
-    OspPrintf(TRUE, FALSE, "DisConnect by app!!\r\n");
+    PRINTMSG_TIME("DisConnect by app!!\r\n");
     g_pFrame->m_pEditMsg->SetText(_T("DisConnect!!"));
+    g_pFrame->m_pm.DoCase(_T("caseDisCnt"));
 }
 
 // 申请服务端分配文件发送instance回复;
@@ -266,7 +302,7 @@ void CClientInstance::ClientFilePostInsAllotAck(CMessage *const pMsg)
 
 	m_wSerInsNum = GETINS(pMsg->srcid);
 
-    OspPrintf(TRUE, FALSE, "Client: wCliPostInsNo: %d, wSerPostInsNo: %d.\r\n", GETINS(pMsg->dstid), GETINS(pMsg->srcid));
+    PRINTMSG("Client: wCliPostInsNo: %d, wSerPostInsNo: %d.\r\n", GETINS(pMsg->dstid), GETINS(pMsg->srcid));
 
     // 发送第一个包;
 	// 创建文件句柄，打开文件;
@@ -274,11 +310,12 @@ void CClientInstance::ClientFilePostInsAllotAck(CMessage *const pMsg)
 	if (m_hFile == INVALID_HANDLE_VALUE)
 	{
 		DWORD dw = GetLastError();
-		OspPrintf(TRUE, FALSE, "Client: CreateFile Failed!, Error: %d.\r\n", dw);
+		PRINTMSG("Client: CreateFile Failed!, Error: %d.\r\n", dw);
 		return;
 	}
 	
 	// 发送第一个包;
+    PRINTMSG_TIME("Start to transfer the file packages!\r\n");
     SendFileInfo(0, 0, "0");
     return;
 }
@@ -286,7 +323,10 @@ void CClientInstance::ClientFilePostInsAllotAck(CMessage *const pMsg)
 // 处理的server端的回复包，决定下一次的文件发送;
 void CClientInstance::OnClientReceive(CMessage *const pMsg)
 {
-	OspPrintf(TRUE, FALSE, "Client: Receive the response package\r\n");
+    if (CPrint::IsPrintFileTR())
+    {
+        PRINTMSG_TIME("Client: Receive the response package\r\n");   
+    }
 
     // 获取收到的消息内容;
     u16 MsgLen = pMsg->length;
@@ -398,7 +438,7 @@ CClientInstance* GetIdleInsID(CApp* pcApp)
     // 当前没有空闲的instance;
     if (wIndex > MAX_INS_NO)
     {
-        OspPrintf(TRUE, FALSE, "Current have none idle instance.\r\n");
+        PRINTMSG("Current have none idle instance.\r\n");
         return NULL;
     }
 
@@ -415,13 +455,12 @@ void CClientInstance::ClientFilePostInsAllot(CMessage *const pcMsg, CApp* pcApp)
 	s8 *pchMsgGet = new char[wMsgLen + 1];
 	ZeroMemory(pchMsgGet, wMsgLen + 1);
 	memcpy_s(pchMsgGet, wMsgLen, pcMsg->content, wMsgLen);
-	//OspPrintf(TRUE, FALSE, "message content is: %s, length is: %d.\n", pchMsgGet, wMsgLen);
 
     // 获取空闲的instance指针;
     CClientInstance *pcIns = GetIdleInsID(pcApp);
     if (pcIns == 0)
     {
-        OspPrintf(TRUE, FALSE, "Client:have none idle instance.\r\n");
+        PRINTMSG("Client:have none idle instance.\r\n");
         return;
     }
 
@@ -456,7 +495,7 @@ void CClientInstance::ClientFilePostInsAllot(CMessage *const pcMsg, CApp* pcApp)
     g_pFrame->m_pBtnFilePost->SetName(_T("FilePstButton"));
     
     g_pvcFilePstInsNo.push_back(pcIns);
-    OspPrintf(TRUE, FALSE, "Client: Get a idle instance, ID: %d, FileName: %s\r\n", pcIns->m_instId, pcIns->m_tFileInfo.strFileName);
+    PRINTMSG("Client: Get a idle instance, ID: %d, FileName: %s\r\n", pcIns->m_instId, pcIns->m_tFileInfo.strFileName);
 
 	// 文件信息获取后，给自己发送消息并进行列表图形绘制;
 	OspPost(MAKEIID(DEMO_APP_CLIENT_NO, CInstance::DAEMON), EVENT_LIST_UI_PAINT, NULL,
@@ -645,7 +684,7 @@ void FirstProgressUI2Paint(CMessage *const pcMsg)
     wIndex = FindIndexByInsNo(wInsNo);
     if (wIndex == MAX_INS_NO)
     {
-    OspPrintf(TRUE, FALSE, "Index Error.\r\n");
+    PRINTMSG("Index Error.\r\n");
     return;
     }*/
 	
@@ -667,7 +706,7 @@ void NormalProgressUI2Paint(CMessage *const pcMsg)
 	wIndex = FindIndexByInsNo(wInsNo);
 	if (wIndex == MAX_INS_NO)
 	{
-		OspPrintf(TRUE, FALSE, "Index Error.\r\n");
+		PRINTMSG("Index Error.\r\n");
 		return;
 	}
 
@@ -677,7 +716,7 @@ void NormalProgressUI2Paint(CMessage *const pcMsg)
 	CProgressUI* pcPrg = static_cast<CProgressUI*>(g_pFrame->m_pm.FindControl(A2W(achPrgName)));
 	if (pcPrg == NULL)
 	{
-		OspPrintf(TRUE, FALSE, "Can't find the progress control\r\n");
+		PRINTMSG("Can't find the progress control\r\n");
 	}
 
 	// 进度条赋值;
@@ -702,7 +741,7 @@ void LastProgressUI2Paint(CMessage *const pcMsg)
 	wIndex = FindIndexByInsNo(wInsNo);
 	if (wIndex == MAX_INS_NO)
 	{
-		OspPrintf(TRUE, FALSE, "Index Error.\r\n");
+		PRINTMSG("Index Error.\r\n");
 		return;
 	}
 
@@ -714,7 +753,7 @@ void LastProgressUI2Paint(CMessage *const pcMsg)
 	CProgressUI* pcPrg = static_cast<CProgressUI*>(g_pFrame->m_pm.FindControl(A2W(achPrgName)));
 	if (pcPrg == NULL)
 	{
-		OspPrintf(TRUE, FALSE, "Can't find the progress control\r\n");
+		PRINTMSG("Can't find the progress control\r\n");
 	}
 
 	// 进度条赋值;
@@ -814,3 +853,4 @@ void CDemoListContainerElementUI::SetPos(RECT rc)
     } 
 }
 #endif
+
