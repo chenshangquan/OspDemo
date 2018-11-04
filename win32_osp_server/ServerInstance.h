@@ -36,7 +36,7 @@ public:
     s32 m_nPuase;			            // 文件停止发送标志;
     s32 m_nCancel;			            // 文件取消发送标志;
 
-    TFileInfo m_tFileInfo;
+    TFileInfo m_tFileInfo;				// 文件基本信息;
 public:
     void InstanceEntry(CMessage *const pMsg);    
     void DaemonInstanceEntry(CMessage *const pcMsg, CApp* pcApp);
@@ -44,6 +44,7 @@ public:
     // Instance中的用户函数;
 	void MsgPostFunc(CMessage *const pMsg);
 	void ServerFilePostInsAllot(CMessage *const pcMsg, CApp* pcApp);
+	void ServerIsFileExist(CMessage *const pcMsg, CApp* pcApp);
 	void OnServerReceive(CMessage *const pMsg);
 	void ReceiveFilePacket(TFileMessage *strFileMsgGet, CMessage *const pMsg);
 	void SendFilePacketEcho(s32 nFlag);

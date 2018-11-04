@@ -13,7 +13,7 @@ vector<CServerInstance*> g_pvcFilePstInsNo;
 
 TCHAR g_strFilePath[MAX_PATH] = _T("");
 TCHAR g_strFileName[MAX_FILE_NAME] = _T("");
-TCHAR g_strFolderPath[MAX_PATH] = _T("F:\\2");
+TCHAR g_strFolderPath[MAX_PATH] = _T("E:\\2");
 
 //map<u32, u32> g_dwNodeNum;
 u32 g_dwNodeNum;
@@ -487,13 +487,13 @@ void CServerInstance::ServerFilePostInsAllot(CMessage *const pcMsg, CApp* pcApp)
 	// 获取客户端InsNo;
 	pcIns->m_wCliInsNum = GETINS(pcMsg->srcid);
 
-	TFileInfo *tFileInfo = (TFileInfo *)pchMsgGet;
+	TFileInfoExt *tFileInfo = (TFileInfoExt *)pchMsgGet;
 
 	// 数据获取;
 	pcIns->m_tFileInfo.fileLength = tFileInfo->fileLength;
 	pcIns->m_tFileInfo.filePacketNum = tFileInfo->filePacketNum;
 	ZeroMemory(pcIns->m_tFileInfo.strFileName, MAX_FILE_NAME + 1);
-	memcpy_s(pcIns->m_tFileInfo.strFileName, MAX_FILE_NAME, tFileInfo->strFileName, (wMsgLen - 2*sizeof(u32)));
+	memcpy_s(pcIns->m_tFileInfo.strFileName, MAX_FILE_NAME, tFileInfo->strFileName, strlen(tFileInfo->strFileName));
 
     // 文件存储路径处理;
     USES_CONVERSION;
@@ -506,8 +506,13 @@ void CServerInstance::ServerFilePostInsAllot(CMessage *const pcMsg, CApp* pcApp)
     lstrcpy(pcIns->m_strFilePath, g_strFilePath);
 
     // 判断文件是否存在, 存在就删除;  //后续需更改为加后缀传送;
-    BOOL bIsExists = PathFileExists(g_strFilePath);
-    if(PathFileExists(g_strFilePath))
+    
+	if (tFileInfo->bIsFileCovered)
+	{
+		// 删除已有文件;
+		DeleteFile(g_strFilePath);
+	}
+	else
     {
         str1 = (CW2A)g_strFilePath;
         SplitString(str1, vecSplit, ".");
@@ -542,8 +547,6 @@ void CServerInstance::ServerFilePostInsAllot(CMessage *const pcMsg, CApp* pcApp)
             ZeroMemory(pcIns->m_strFilePath, MAX_PATH);
             wcscpy(pcIns->m_strFilePath, (CA2W)str2.c_str());
         }
-        
-        //DeleteFile(g_strFilePath);
     }
 
 	// 服务端其他变量初始化; --TODO
@@ -567,6 +570,44 @@ void CServerInstance::ServerFilePostInsAllot(CMessage *const pcMsg, CApp* pcApp)
 		NULL, 0, pcIns->m_dwNodeNum, MAKEIID(DEMO_APP_SERVER_NO, pcIns->m_instId), 0, DEMO_POST_TIMEOUT);
 
     return;
+}
+
+void CServerInstance::ServerIsFileExist(CMessage *const pcMsg, CApp* pcApp)
+{
+	u16 wMsgLen = 0;
+	s8 achFileName[MAX_FILE_NAME + 1] = {0};
+	BOOL32 bFileExists = 0;
+
+	// 消息内容提取;
+	wMsgLen = pcMsg->length;
+	s8 *pchMsgGet = new char[wMsgLen + 1];
+	ZeroMemory(pchMsgGet, wMsgLen + 1);
+	memcpy_s(pchMsgGet, wMsgLen, pcMsg->content, wMsgLen);
+
+	TFileInfo *tFileInfo = (TFileInfo *)pchMsgGet;
+
+	// 文件名获取;
+	memcpy_s(achFileName, MAX_FILE_NAME, tFileInfo->strFileName, strlen(tFileInfo->strFileName));
+
+	// 文件存储路径处理;
+	ZeroMemory(g_strFilePath, MAX_PATH);
+	lstrcat(g_strFilePath, g_strFolderPath);
+	lstrcat(g_strFilePath, L"\\");
+	lstrcat(g_strFilePath, (CA2W)achFileName);
+
+	// 判断文件是否存在;
+	if(PathFileExists(g_strFilePath))
+	{
+		bFileExists = 1;
+	}
+
+	// 服务端文件是否存在消息回复;
+	OspPost(pcMsg->srcid, EVENT_SERVER_IS_FILE_EXIST_ACK, &bFileExists,
+		sizeof(BOOL32), g_dwNodeNum, MAKEIID(DEMO_APP_SERVER_NO, INS_MSG_POST_NO), 0, DEMO_POST_TIMEOUT);
+
+	// 释放申请的空间;
+	delete [] pchMsgGet;
+	pchMsgGet = NULL;
 }
 
 // 服务端文件发送instance释放;
@@ -607,6 +648,9 @@ void CServerInstance::DaemonInstanceEntry(CMessage *const pcMsg, CApp* pcApp)
         ServerFilePostInsAllot(pcMsg, pcApp);
         //NextState(STATE_WORK);
         break;
+	case EVENT_SERVER_IS_FILE_EXIST:
+		ServerIsFileExist(pcMsg, pcApp);
+		break;
     default:
         // Def_Fuction(pMsg);
         break;

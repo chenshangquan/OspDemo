@@ -6,7 +6,7 @@
 	<HorizontalLayout height="80">
 		<VerticalLayout>
 			<HorizontalLayout height="25">
-				<Edit name="EditIPAddr" text="172.16.160.113" font="0" bkcolor="FFF0F8FF" width="160"  height="25" />
+				<Edit name="EditIPAddr" text="192.168.5.235" font="0" bkcolor="FFF0F8FF" width="160"  height="25" />
 				<VerticalLayout width="80"/>
 				<Edit name="EditMsg" text="message box" font="0" bkcolor="FFF0F8FF" width="180" height="25" readonly="true"/>
 			</HorizontalLayout>

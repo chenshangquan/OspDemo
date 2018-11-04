@@ -341,7 +341,7 @@ void OnBnClickedFileSel()
 void OnBnClickedFilePST()
 {
     u16 wIndex = 0;
-    TFileInfo tFileInfo = {0};
+    TFileInfoExt tFileInfo = {0};
     u16 wLength = 0;
 
     for (wIndex = 0; wIndex < g_pvcFilePstInsNo.size(); wIndex++)
@@ -353,8 +353,8 @@ void OnBnClickedFilePST()
 		}
 
 		g_pvcFilePstInsNo[wIndex]->m_nUsedFlag = 1;
-        memset((s8*)&tFileInfo, 0, MAX_FILE_NAME+1+2*sizeof(u32));
-        wLength = 0;
+        memset((s8*)&tFileInfo, 0, sizeof(TFileInfoExt));
+		tFileInfo.bIsFileCovered =  g_pvcFilePstInsNo[wIndex]->m_bIsFileCovered;
         tFileInfo.fileLength =  g_pvcFilePstInsNo[wIndex]->m_tFileInfo.fileLength;
         tFileInfo.filePacketNum =  g_pvcFilePstInsNo[wIndex]->m_tFileInfo.filePacketNum;
         ZeroMemory(tFileInfo.strFileName, MAX_FILE_NAME + 1);
@@ -363,7 +363,7 @@ void OnBnClickedFilePST()
 
         // 让服务端分配一个空闲的instance，用于处理文件接收流程;
         OspPost(MAKEIID(DEMO_APP_SERVER_NO, CInstance::DAEMON), EVENT_SERVER_FILE_POST_INS_ALLOT,
-            &tFileInfo, wLength + 2*sizeof(u32), g_dwNodeNum, MAKEIID(DEMO_APP_CLIENT_NO,  g_pvcFilePstInsNo[wIndex]->m_instId), 0, DEMO_POST_TIMEOUT);
+            &tFileInfo, sizeof(TFileInfoExt), g_dwNodeNum, MAKEIID(DEMO_APP_CLIENT_NO,  g_pvcFilePstInsNo[wIndex]->m_instId), 0, DEMO_POST_TIMEOUT);
     }
 
     // 使发送按钮无效;
@@ -429,7 +429,7 @@ void OnBnClickedFileCCL()
 void OnBnClickedFileStt(u16 wInsNo)
 {
 	u16 wIndex = 0;
-	TFileInfo tFileInfo = {0};
+	TFileInfoExt tFileInfo = {0};
 	u16 wLength = 0;
 
 	wIndex = FindIndexByInsNo(wInsNo);
@@ -448,6 +448,7 @@ void OnBnClickedFileStt(u16 wInsNo)
 	g_pvcFilePstInsNo[wIndex]->m_nUsedFlag = 1;
 
     // 获取待发送文件信息;
+	tFileInfo.bIsFileCovered =  g_pvcFilePstInsNo[wIndex]->m_bIsFileCovered;
 	tFileInfo.fileLength =  g_pvcFilePstInsNo[wIndex]->m_tFileInfo.fileLength;
 	tFileInfo.filePacketNum =  g_pvcFilePstInsNo[wIndex]->m_tFileInfo.filePacketNum;
 	ZeroMemory(tFileInfo.strFileName, MAX_FILE_NAME + 1);
@@ -456,7 +457,7 @@ void OnBnClickedFileStt(u16 wInsNo)
 	
 	// 让服务端分配一个空闲的instance，用于处理文件接收流程;
 	OspPost(MAKEIID(DEMO_APP_SERVER_NO, CInstance::DAEMON), EVENT_SERVER_FILE_POST_INS_ALLOT,
-		&tFileInfo, wLength + 2*sizeof(u32), g_dwNodeNum, MAKEIID(DEMO_APP_CLIENT_NO,  g_pvcFilePstInsNo[wIndex]->m_instId), 0, DEMO_POST_TIMEOUT);
+		&tFileInfo, sizeof(TFileInfoExt), g_dwNodeNum, MAKEIID(DEMO_APP_CLIENT_NO,  g_pvcFilePstInsNo[wIndex]->m_instId), 0, DEMO_POST_TIMEOUT);
 
 	return;
 }

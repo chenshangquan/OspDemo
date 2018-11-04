@@ -47,8 +47,8 @@ enum EM_DAEM_EVENT_TYPE
 {
     EVENT_CLIENT_FILE_POST_INS_ALLOT = 12200,     // 客户端文件发送实例申请事件;
     EVENT_SERVER_FILE_POST_INS_ALLOT,             // 服务端文件发送实例申请事件;
-    //EVENT_CLIENT_FILE_POST_INS_RELEASE,         // 客户端文件发送实例释放事件;
-    //EVENT_SERVER_FILE_POST_INS_RELEASE,         // 服务端文件发送实例释放事件;
+    EVENT_SERVER_IS_FILE_EXIST,                   // 客户端待发送文件在服务端是否存在事件;
+    EVENT_SERVER_IS_FILE_EXIST_ACK,               // 服务端文件是否存在消息回复事件;
 
     EVENT_END
 };
@@ -78,6 +78,15 @@ typedef struct tagFileInfo
     u32 fileLength;							// 文件总长度;
     s8  strFileName[MAX_FILE_NAME + 1];	    // 文件名称;
 }TFileInfo;
+
+// 文件信息结构体extand;
+typedef struct tagFileInfoExt
+{
+	BOOL32 bIsFileCovered;                  // 同名文件是否覆盖标志位;
+	u32 filePacketNum;						// 文件分包数;			
+	u32 fileLength;							// 文件总长度;
+	s8 strFileName[MAX_FILE_NAME + 1];	    // 文件名称;
+}TFileInfoExt;
 
 // 打印信息;
 API void help();

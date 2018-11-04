@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "ClientInstance.h"
 #include "win32_osp_client.h"
+#include "FilePostOptDlg.h"
 #include "print.h"
 
 /****************************************************
@@ -12,7 +13,7 @@ vector<CClientInstance*> g_pvcFilePstInsNo;
 
 TCHAR g_strFilePath[MAX_PATH] = _T("");
 TCHAR g_strFileName[MAX_FILE_NAME] = _T("");
-TCHAR g_strFolderPath[MAX_PATH] = _T("F:\\2");
+TCHAR g_strFolderPath[MAX_PATH] = _T("E:\\2");
 
 u32 g_dwNodeNum;
 
@@ -320,6 +321,36 @@ void CClientInstance::ClientFilePostInsAllotAck(CMessage *const pMsg)
     return;
 }
 
+// 服务端文件是否已存在消息回复处理;
+void CClientInstance::ServerIsFileExistAck(CMessage *const pMsg)
+{
+	// 若文件在server端存在，则创建“文件是否覆盖”的选择窗口;
+	BOOL32 bFileExists  = *(pMsg->content);
+	if (bFileExists)
+	{
+		CFilePostOptDlg* pDlg = new CFilePostOptDlg();
+		pDlg->Create( g_pFrame->GetHWND(), _T("CFilePostOptDlg"), UI_WNDSTYLE_FRAME, UI_WNDSTYLE_EX_FRAME);
+		pDlg->CenterWindow();
+		if (pDlg->ShowModal() == IDOK)
+		{
+			m_bIsFileCovered = 1;
+		}
+		else
+		{
+			m_bIsFileCovered = 0;
+		}
+	}
+
+	//g_pvcFilePstInsNo.push_back(this);
+	//OspPrintf(TRUE, FALSE, "Client: Get a idle instance, ID: %d, FileName: %s\r\n", m_instId, m_tFileInfo.strFileName);
+
+	// 文件信息获取后，给自己发送消息并进行列表图形绘制;
+	OspPost(MAKEIID(DEMO_APP_CLIENT_NO, CInstance::DAEMON), EVENT_LIST_UI_PAINT, NULL,
+		0, 0, MAKEIID(DEMO_APP_CLIENT_NO, m_instId), 0, DEMO_POST_TIMEOUT);
+
+	return;
+}
+
 // 处理的server端的回复包，决定下一次的文件发送;
 void CClientInstance::OnClientReceive(CMessage *const pMsg)
 {
@@ -398,6 +429,9 @@ void CClientInstance::InstanceEntry(CMessage *const pMsg)
         break;
 	case EVENT_SERVER_FILE_POST_INS_ALLOT_ACK:
 		ClientFilePostInsAllotAck(pMsg);
+		break;
+	case EVENT_SERVER_IS_FILE_EXIST_ACK:
+		ServerIsFileExistAck(pMsg);
 		break;
     case EVENT_FILE_POST2C:
         OnClientReceive(pMsg);
@@ -491,15 +525,16 @@ void CClientInstance::ClientFilePostInsAllot(CMessage *const pcMsg, CApp* pcApp)
     pcIns->m_nPuase = 0;
     pcIns->m_nCancel = 0;
 
+	pcIns->m_bIsFileCovered = 0;
     // 按钮无效;
     g_pFrame->m_pBtnFilePost->SetName(_T("FilePstButton"));
     
     g_pvcFilePstInsNo.push_back(pcIns);
     PRINTMSG("Client: Get a idle instance, ID: %d, FileName: %s\r\n", pcIns->m_instId, pcIns->m_tFileInfo.strFileName);
 
-	// 文件信息获取后，给自己发送消息并进行列表图形绘制;
-	OspPost(MAKEIID(DEMO_APP_CLIENT_NO, CInstance::DAEMON), EVENT_LIST_UI_PAINT, NULL,
-		0, 0, MAKEIID(DEMO_APP_CLIENT_NO, pcIns->m_instId), 0, DEMO_POST_TIMEOUT);
+	// 发送文件信息到服务端，判断该文件是否已存在;
+	OspPost(MAKEIID(DEMO_APP_SERVER_NO, CInstance::DAEMON), EVENT_SERVER_IS_FILE_EXIST, pcMsg->content,
+		wMsgLen, g_dwNodeNum, MAKEIID(DEMO_APP_CLIENT_NO, pcIns->m_instId), 0, DEMO_POST_TIMEOUT);
 
 	// 释放空间;
 	delete [] pchMsgGet;

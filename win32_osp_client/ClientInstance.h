@@ -26,7 +26,8 @@ public:
     s32 m_nPuase;			            // 文件停止发送标志;
     s32 m_nCancel;			            // 文件取消发送标志;
 
-    TFileInfo m_tFileInfo;
+	BOOL32 m_bIsFileCovered;            // 同名文件是否进行覆盖;
+    TFileInfo m_tFileInfo;				// 文件基本信息;
 public:
     void InstanceEntry(CMessage *const pMsg);    
     void DaemonInstanceEntry(CMessage *const pcMsg, CApp* pcApp);
@@ -35,6 +36,7 @@ public:
     //void OnMyReceive(CMessage *const pMsg);
 	void ClientFilePostInsAllot(CMessage *const pcMsg, CApp* pcApp);
 	void ClientFilePostInsAllotAck(CMessage *const pMsg);
+	void ServerIsFileExistAck(CMessage *const pMsg);
     void SendFileInfo(s32 fStart,s32 fSize,char *fHead);
 	void OnClientReceive(CMessage *const pMsg);
     void CliFilePostDoneRelease(u32 dwInsNo);

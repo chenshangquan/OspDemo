@@ -1,17 +1,25 @@
 #include "StdAfx.h"
 #include "FilePostOptDlg.h"
 
+//BEGIN_MESSAGE_MAP(CFilePostOptDlg, WindowImplBase)
+//	ON_MESSAGE(WM_IS_FILE_OVERWRITTEN, &CFilePostOptDlg::OnFilePost)
+//END_MESSAGE_MAP()
 
-CFilePostOptDlg::CFilePostOptDlg(void)
+CFilePostOptDlg::CFilePostOptDlg()
 {
     m_pBtnYES = NULL;
     m_pBtnNO  = NULL;
 }
 
 
-CFilePostOptDlg::~CFilePostOptDlg(void)
+CFilePostOptDlg::~CFilePostOptDlg()
 {
 }
+
+//LRESULT CFilePostOptDlg::OnFilePost(WPARAM wParam, LPARAM lParam)
+//{
+//	return 0;
+//}
 
 LPCTSTR CFilePostOptDlg::GetWindowClassName() const
 {
@@ -24,7 +32,7 @@ void CFilePostOptDlg::OnFinalMessage(HWND hWnd)
 }
 CDuiString CFilePostOptDlg::GetSkinFile()
 {
-    return _T("");
+    return _T("FilePostOptDlg.xml");
 }
 
 CDuiString  CFilePostOptDlg::GetSkinFolder()
@@ -83,10 +91,12 @@ void CFilePostOptDlg::Notify(TNotifyUI& msg)
 		}
 		else if(msg.pSender->GetName() == TEXT("yesbtn"))
 		{
+			//SendMessage(GetParent(), WM_IS_FILE_OVERWRITTEN, (WPARAM)EM_FILE_OVERWRITTEN, 0);
 			Close(IDOK);
 		}
 		else if (msg.pSender->GetName() == _T("nobtn"))
 		{
+			//SendMessage(GetParent(), WM_IS_FILE_OVERWRITTEN, (WPARAM)EM_FILE_NOT_OVERWRITTEN, 0);
 			Close(IDCANCEL);
 		}
 	}
@@ -116,4 +126,11 @@ LRESULT CFilePostOptDlg::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 		bHandled = FALSE;
 	}
 	return WindowImplBase::HandleMessage(uMsg,wParam,lParam);
+}
+
+LRESULT CFilePostOptDlg::MessageHandler(UINT uMsg, WPARAM wParam, LPARAM lParam, bool& bHandled)
+{
+	//return WindowImplBase::MessageHandler(uMsg, wParam, lParam, bHandled);
+	bHandled = FALSE;
+	return 0;
 }
