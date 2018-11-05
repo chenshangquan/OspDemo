@@ -319,7 +319,7 @@ API void help()
 {
     OspPrintf(TRUE,FALSE,"\nprt nLevel:打印级别为nLevel的消息；消息级别 0-4，\n \
                          0为关闭打印\n \
-                         1为打印一般提示消息，默认输入prt即为关闭打印\n \
+                         1为打印一般提示消息，默认输入prt即为1\n \
                          2为打印通讯消息\n \
                          3为打印文件发送消息\n \
                          4为打印所有消息");
