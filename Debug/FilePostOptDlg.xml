@@ -1,29 +1,20 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
-<Window size="370,170" roundcorner="1,0" bktrans="true">
-<Font name="微软雅黑" size="14" bold="false" />
-	<VerticalLayout name="FileCoveredOpt" bkcolor="#4d000000" >
-		<HorizontalLayout height="30" bkcolor="#feffffff">
-			<Control />
-			<Button name="closebtn" height="22"  width="27" normalimage="frame_btn_close_normal.bmp" hotimage="OspDemoSkins\frame_btn_close_hot.bmp" pushedimage="OspDemoSkins\frame_btn_close_down.bmp"/>
+<Window size="370,170" roundcorner="1,0">
+<Font name="微软雅黑" size="15" bold="false" />
+	<VerticalLayout name="FileCoveredOpt" >
+		<HorizontalLayout height="20" bkcolor="ff000000">
+			<Control bkcolor="FFFFFFFF"/>
+			<Button name="closebtn" height="20" width="20" normalimage="file='OspDemoSkins\close_normal.png'" hotimage=" file='OspDemoSkins\close_hover.png'" pushedimage="file='OspDemoSkins\close_down.png'" />
 		</HorizontalLayout>
-		<HorizontalLayout bkcolor="#feffffff">
-			<VerticalLayout>
-				<Control />
-				<HorizontalLayout height="25" bkcolor="#feffffff">
-					<Control width="80"/>
-					<Label name="msg_text" text="是否覆盖已存在的文件:" height="22" align="left" font="0"/>
-					<Control />
-				</HorizontalLayout>
-				<Control />
-			</VerticalLayout>
+		<HorizontalLayout bkcolor="FFC0C0C0">
+			<Label name="msg_text" text="是否覆盖已存在的文件:" font="0" textcolor="ff000000" align="center" />
 		</HorizontalLayout>
-		<HorizontalLayout  height="49" bkcolor="#feffffff">
-			<Control width="10"/>
+		<HorizontalLayout  height="49" bkcolor="ffffffff">
 			<Control />
-			<Button name="yesbtn" text="是(Y)"  height="22" width="74" padding="0,13,0,0" align="center" normalimage="file='OspDemoSkins\button_normal.png'" hotimage=" file='OspDemoSkins\button_hover.png'" pushedimage="file='OspDemoSkins\button_pushed.png'" font="0"/>
-			<Button name="nobtn" text="否(N)" height="22" width="74" padding="5,13,0,0" align="center" normalimage="file='OspDemoSkins\button_normal.png'" hotimage=" file='OspDemoSkins\button_hover.png'" pushedimage="file='OspDemoSkins\button_pushed.png'" font="0"/>
+			<Button name="yesbtn" text="Y" textcolor="ff000000" height="22" width="74" align="center" normalimage="file='OspDemoSkins\button_normal.png'" hotimage=" file='OspDemoSkins\button_hover.png'" pushedimage="file='OspDemoSkins\button_pushed.png'" font="0"/>
+			<Button name="nobtn" text="N" textcolor="ff000000" height="22" width="74" align="center" normalimage="file='OspDemoSkins\button_normal.png'" hotimage=" file='OspDemoSkins\button_hover.png'" pushedimage="file='OspDemoSkins\button_pushed.png'" font="0"/>
 			<Control width="10"/>
 		</HorizontalLayout>
-		<HorizontalLayout height="5" bkcolor="#FFEDF3FC"/>
+		<HorizontalLayout height="5" bkcolor="ffffffff"/>
 	</VerticalLayout>
 </Window>

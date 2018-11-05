@@ -9,6 +9,7 @@ CFilePostOptDlg::CFilePostOptDlg()
 {
     m_pBtnYES = NULL;
     m_pBtnNO  = NULL;
+	m_pExitbtn = NULL;
 }
 
 
@@ -67,9 +68,9 @@ CControlUI* CFilePostOptDlg::CreateControl(LPCTSTR pstrClassName)
 
 void CFilePostOptDlg::InitWindow()
 {
-	m_pBtnYES = static_cast<COptionUI *>(m_PaintManager.FindControl(_T("yesbtn")));
-	m_pBtnNO = static_cast<COptionUI *>(m_PaintManager.FindControl(_T("nobtn")));
-	//m_pExitbtn = static_cast<COptionUI *>(m_PaintManager.FindControl(TEXT("ExitDirectbtn")));
+	m_pBtnYES = static_cast<CButtonUI *>(m_PaintManager.FindControl(_T("yesbtn")));
+	m_pBtnNO = static_cast<CButtonUI *>(m_PaintManager.FindControl(_T("nobtn")));
+	m_pExitbtn = static_cast<CButtonUI *>(m_PaintManager.FindControl(TEXT("closebtn")));
 	//m_pMoveToTraybtn = static_cast<COptionUI *>(m_PaintManager.FindControl(TEXT("MoveInTraybtn")));
 	//m_pchkOption =  static_cast<CCheckBoxUI*>(m_PaintManager.FindControl(TEXT("chkOption")));
 }
@@ -91,12 +92,10 @@ void CFilePostOptDlg::Notify(TNotifyUI& msg)
 		}
 		else if(msg.pSender->GetName() == TEXT("yesbtn"))
 		{
-			//SendMessage(GetParent(), WM_IS_FILE_OVERWRITTEN, (WPARAM)EM_FILE_OVERWRITTEN, 0);
 			Close(IDOK);
 		}
 		else if (msg.pSender->GetName() == _T("nobtn"))
 		{
-			//SendMessage(GetParent(), WM_IS_FILE_OVERWRITTEN, (WPARAM)EM_FILE_NOT_OVERWRITTEN, 0);
 			Close(IDCANCEL);
 		}
 	}

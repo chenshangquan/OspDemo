@@ -328,10 +328,12 @@ void CClientInstance::ServerIsFileExistAck(CMessage *const pMsg)
 	BOOL32 bFileExists  = *(pMsg->content);
 	if (bFileExists)
 	{
-		CFilePostOptDlg* pDlg = new CFilePostOptDlg();
-		pDlg->Create( g_pFrame->GetHWND(), _T("CFilePostOptDlg"), UI_WNDSTYLE_FRAME, UI_WNDSTYLE_EX_FRAME);
-		pDlg->CenterWindow();
-		if (pDlg->ShowModal() == IDOK)
+		//CFilePostOptDlg* pDlg = new CFilePostOptDlg();
+		CFilePostOptDlg pDlg;
+		//pDlg->Create( g_pFrame->GetHWND(), _T("CFilePostOptDlg"), UI_WNDSTYLE_FRAME, UI_WNDSTYLE_EX_FRAME);
+		pDlg.Create( g_pFrame->GetHWND(), _T("CFilePostOptDlg"), UI_WNDSTYLE_EX_FRAME, WS_EX_WINDOWEDGE);
+		pDlg.CenterWindow();
+		if (pDlg.ShowModal() == IDOK)
 		{
 			m_bIsFileCovered = 1;
 		}
@@ -339,6 +341,7 @@ void CClientInstance::ServerIsFileExistAck(CMessage *const pMsg)
 		{
 			m_bIsFileCovered = 0;
 		}
+		//delete pDlg;
 	}
 
 	//g_pvcFilePstInsNo.push_back(this);

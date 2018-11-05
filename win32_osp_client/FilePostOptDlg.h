@@ -27,9 +27,9 @@ protected:
 	//DECLARE_MESSAGE_MAP()
 public:
 
-    COptionUI  *m_pBtnYES;
-    COptionUI  *m_pBtnNO;
-    //COptionUI  *m_pExitbtn;
+    CButtonUI  *m_pBtnYES;
+    CButtonUI  *m_pBtnNO;
+    CButtonUI  *m_pExitbtn;
     //COptionUI  *m_pMoveToTraybtn;
     //CCheckBoxUI*m_pchkOption;
 
